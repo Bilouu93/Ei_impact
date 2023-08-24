@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 from Importation import dic_wb, df_wb, df_ts
 
 delta = 0.015 #taux d'actualisation
