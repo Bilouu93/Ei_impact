@@ -1,15 +1,15 @@
-Variables micro;Coef reg kt non normalis�;Coef reg ps non normalis�
-Non Menace nouveaux entrants;2;1
-Non Produit de substitution;2;1
-Non Intensite concurrentielle;2;1
-Non Pouvoir des clients;0.5;1
-Non Pouvoir des fournisseurs;0;1
-Expertise domaine;1;1
-Reactivite;0;0.5
-Gestion temps/risque;0.25;0.5
-Contrele chaine d'approvisionnement;0.5;1
-Ressources financieres;0.5;2
-Reseaux/partenaires;0;1
-Caractere innovant;2;0
-SAV/communication clients;0;0.5
-Coherence du postionnement;0;0.5
+Variables micro,Coef reg kt non normalisé,Coef reg ps non normalisé
+Non Menace nouveaux entrants,2.0,1.0
+Non Produit de substitution,2.0,1.0
+Non Intensité concurrentielle,2.0,1.0
+Non Pouvoir des clients,0.5,1.0
+Non Pouvoir des fournisseurs,0.0,1.0
+Expertise domaine,1.0,1.0
+Réactivité,0.0,0.5
+Gestion temps/risque,0.25,0.5
+Contrôle chaine d'approvisionnement,0.5,1.0
+Ressources financières,0.5,2.0
+Réseaux/partenaires,0.0,1.0
+Caractère innovant,2.0,0.0
+SAV/communication clients,0.0,0.5
+Cohérence du postionnement,0.0,0.5
