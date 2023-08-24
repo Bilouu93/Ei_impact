@@ -1,8 +1,8 @@
 import pandas as pd
 
-file_wb = 'C:/Users/bilel/OneDrive - CentraleSupelec/Stage EI/Version_V1/values.xlsx'
+file_wb = 'C:/Users/bilel/OneDrive - CentraleSupelec/Stage EI/Version_V1/Ei_impact/values.xlsx'
 df_wb = pd.read_excel(file_wb)
-file_ts = 'C:/Users/bilel/OneDrive - CentraleSupelec/Stage EI/Version_V1/value_transversal.xlsx'
+file_ts = 'C:/Users/bilel/OneDrive - CentraleSupelec/Stage EI/Version_V1/Ei_impact/value_transversal.xlsx'
 df_ts = pd.read_excel(file_ts)
 
 #traitement des variables à coef négatifs:
