@@ -17,7 +17,6 @@ Social_potency;-0.02
 Optimism;0.04
 Agreebleness;-0.03
 Sympathy;-0.01
-;
 Gratitude;0.05
 Consciensciousness;0.01
 Living_the_moment;0.01
@@ -26,7 +25,7 @@ Physical_attractiveness;0.06
 Self-efficacy;0.05
 Openness_to_new_experiences;0.01
 Compensatory_primary_control;0.01
-Partenaired;0,1
+Partenaired;0.1
 Family_support;0.01
 Famlily_strain;-0.02
 Having_grandparents;0.01
@@ -61,7 +60,7 @@ No_acces_to_health_services;-0.02
 Noise_pollution;0.04
 Air_and_water_pollution;0.04
 Close_to_green_spaces;0.11
-Richessness_fauna,_flaura_and_landscape;0.001
+Richessness_fauna_and_flaura_and_landscape;0.001
 Academic_education;0.01
 Family_education;0.08
 Physical_activity;0.01
@@ -72,7 +71,7 @@ Intellectual_activities;0.01
 Assessment_professionnal_life;0.04
 Balance_btw_personal_and_professional_life;0.02
 Assessment_financial_situation;0.06
-Climatic;0,1
+Climatic;0.1
 Control_over_professionnal_life;0.02
 Financial_situation_effort;0.03
 ;
