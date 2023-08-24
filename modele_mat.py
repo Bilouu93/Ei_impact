@@ -24,7 +24,7 @@ def plus_proche_valeur(n,L):
     return ind, L[ind][0]
 
 def modele_transitoire(final, tau,t):
-    return final*(1-np.exp(-t/tau))
+    return final*(1-np.exp(-t/(tau+0.001)))
 
 class Impact:
     def __init__(self,input_A,Trans,horizon):
