@@ -281,7 +281,7 @@ def main():
         valider_saisies = st.button("Valider mes saisies")
 
     if valider_saisies:
-        st.header('5) Résultats')
+        st.header('5- Résultats')
         st.markdown(
         f"<div style='text-align: center; font-size: 24px; font-weight: bold; border: 2px solid black; padding: 10px;'> Impact = {impact_value}</div>",
         unsafe_allow_html=True)
