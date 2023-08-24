@@ -1,0 +1,5 @@
+[theme]
+base="light"
+backgroundColor = "rgba(0, 255, 0, 0.05)"
+secondaryBackgroundColor = "rgba(0, 255, 0, 0.1)"
+
