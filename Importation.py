@@ -1,8 +1,8 @@
 import pandas as pd
 
-file_wb = './Ei_impact/values.xlsx'
+file_wb = './values.xlsx'
 df_wb = pd.read_excel(file_wb)
-file_ts = './Ei_impact/value_transversal.xlsx'
+file_ts = './value_transversal.xlsx'
 df_ts = pd.read_excel(file_ts)
 
 #traitement des variables à coef négatifs:
