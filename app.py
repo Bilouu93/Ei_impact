@@ -101,30 +101,67 @@ def main():
 
 
     st.set_page_config(layout="wide")
-    st.title("Modèle de prédiction d'impact")
+    st.image("EI_logo.png", width=200)
+    # Utiliser la balise HTML <style> pour centrer le titre
+    st.markdown("""
+    <style>
+        .centered-title {
+            text-align: center;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Afficher le titre centré
+    st.markdown('<h1 class="centered-title">Modèle de prédiction d\'impact</h1>', unsafe_allow_html=True)
+
+    # Définir le style CSS pour les éléments fixes
+    style = """ 
+        .fixed-author {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            margin: 10px;
+            font-style: italic;
+        }
+    """
+
+    # Appliquer le style
+    st.markdown(f'<style>{style}</style>', unsafe_allow_html=True)
+
+    # Afficher l'auteur en bas à gauche (élément fixe)
+    st.markdown('<p class="fixed-author">Bilel HATMI</p>', unsafe_allow_html=True)
+
 
     
 
-    st.header("Choix de la dynamique")
-    options_tau = ['tau global','tau individuel']
+    st.header("1) Choix de la dynamique")
+    options_tau = ['Macro','Micro']
     option_tau = st.radio("Choisir un mode de sélection pour caractériser le régime transitoire", options_tau)
     bool_indiv = True
-    if option_tau == 'tau global':
+    if option_tau == 'Macro':
         tau_global = st.number_input(f"Valeur de tau_global", value = 1.0, step=0.5) 
         bool_indiv = False
     horizon = st.number_input(f"Horizon", value = 10, step=1)
 
-    st.header("Caractérisation des variables transversales")
+    st.header("2) Caractérisation des variables transversales")
     Trans = np.zeros(len(L_trans))
     with st.expander("Cliquez ici pour modifier la valeur des variables transversales"):
-        for n in range(len(L_trans)):
-            trans_value = st.slider(f"Valeur {L_trans[n]}",value=-20.0, min_value=-100.0, max_value=0.0, step=1.0)
-            Trans[n] = trans_value
+        col1,col2,col3 = st.columns([5,1,5])
+        with col1:
+            for n in range(0,int(len(L_trans)/2)):
+                t_rd = random.randint(0,100)
+                trans_value = st.slider(f"Valeur {L_trans[n]}",value=t_rd, min_value=0, max_value=100, step=1)
+                Trans[n] = trans_value -100
+        with col3:
+            for n in range(int(len(L_trans)/2), len(L_trans)):
+                t_rd = random.randint(0,100)
+                trans_value = st.slider(f"Valeur {L_trans[n]}",value=t_rd, min_value=0, max_value=100, step=1)
+                Trans[n] = trans_value-100
     
 
-    st.header("Caractérisation des groupes de population")
+    st.header("3) Caractérisation des groupes de population")
     # Demander à l'utilisateur de saisir le nombre de groupes
-    nb_gp = st.number_input("Nombre de groupes", min_value=1, step=1)
+    nb_gp = st.number_input("Nombre de groupes", value = 2, min_value=1, step=1)
 
     A_input = {}
     with st.expander("Cliquez ici pour modifier la valeur des variables prédictives"):
@@ -141,30 +178,50 @@ def main():
                 tau_pop = tau_global
             st.markdown("---")
             A_input[group_id][-1] = ('taille', taille_pop, tau_pop)
-            for n in range(len(L_var)):
-                if group_id==1:
-                    rd_value = random.uniform(-0.2,0.6)
-                elif group_id==2:
-                    rd_value = random.uniform(-0.5,0.1)
-                else:
-                    rd_value = random.uniform(-0.2,1)
-                variable_value = st.number_input(f"Valeur {L_var[n]}", value = rd_value, step=0.01, key=f"group{group_id}_{L_var[n]}" )
-                #st.markdown(f"Valeur <i>{L_var[n]}</i> ", unsafe_allow_html=True)
-                #variable_value = st.number_input(value = 0.00, step=0.01)
-                if bool_indiv:
-                    tau_value = st.number_input(f"Tau {L_var[n]} ", value = 0.00, step=0.01, key=f"group{group_id}_{L_var[n]}_tau" )
-                else:
-                    tau_value = tau_global
-                A_input[group_id][n] = (L_var[n], variable_value, tau_value)
-                st.markdown("---")
+            col1,col2,col3 = st.columns([5,1,5])
+            with col1:
+                for n in range(int(len(L_var)/2)+1):
+                    if group_id==1:
+                        rd_value = random.uniform(-0.2,0.6)
+                    elif group_id==2:
+                        rd_value = random.uniform(-0.5,0.1)
+                    else:
+                        rd_value = random.uniform(-0.2,1)
+                    variable_value = st.number_input(f"Valeur _{L_var[n]}_", value = rd_value, step=0.01, key=f"group{group_id}_{L_var[n]}" )
+                    #st.markdown(f"Valeur <i>{L_var[n]}</i> ", unsafe_allow_html=True)
+                    #variable_value = st.number_input(value = 0.00, step=0.01)
+                    if bool_indiv:
+                        tau_value = st.number_input(f"Tau {L_var[n]} ", value = 0.00, step=0.01, key=f"group{group_id}_{L_var[n]}_tau" )
+                    else:
+                        tau_value = tau_global
+                    A_input[group_id][n] = (L_var[n], variable_value, tau_value)
+                    st.markdown("---")
+            with col3:
+                for n in range(int(len(L_var)/2) + 1, len(L_var)):
+                    if group_id==1:
+                        rd_value = random.uniform(-0.2,0.6)
+                    elif group_id==2:
+                        rd_value = random.uniform(-0.5,0.1)
+                    else:
+                        rd_value = random.uniform(-0.2,1)
+                    variable_value = st.number_input(f"Valeur _{L_var[n]}_", value = rd_value, step=0.01, key=f"group{group_id}_{L_var[n]}" )
+                    #st.markdown(f"Valeur <i>{L_var[n]}</i> ", unsafe_allow_html=True)
+                    #variable_value = st.number_input(value = 0.00, step=0.01)
+                    if bool_indiv:
+                        tau_value = st.number_input(f"Tau {L_var[n]} ", value = 0.00, step=0.01, key=f"group{group_id}_{L_var[n]}_tau" )
+                    else:
+                        tau_value = tau_global
+                    A_input[group_id][n] = (L_var[n], variable_value, tau_value)
+                    st.markdown("---")
+                
     
     impact_class = Impact(A_input,Trans,horizon)
     impact_value = round(impact_class.impact_tot())
     n_tot = impact_class.n_glob()
 
 
-    st.header('Vérification du paramétrage de kt et ps')
-    with st.expander("Cliquez ici pour vérifier le parametrage des fonction kt et ps"):
+    st.header('4) Vérification du paramétrage de $k_t$ et $p_s$')
+    with st.expander("Cliquez ici pour vérifier le parametrage des fonction $k_t$ et $p_s$"):
         Kt_list = np.linspace(-w_t,0,100)
         Ks_list = np.linspace(-w_s,0,100)
         KT = [kt_2(K) for K in Kt_list]
@@ -181,7 +238,7 @@ def main():
         with col1:
             # Créer un graphe interactif Plotly
             fig_4 = px.line(x=Kt_list, y=KT, title='Fonction de pénalisation contrefactuelle')
-            fig_4.update_traces(line=dict(color='red', dash='solid'))
+            fig_4.update_traces(line=dict(color='green', dash='solid'))
             fig_4.update_xaxes(title_text='K')
             fig_4.update_yaxes(title_text='k_t')
             fig_4.update_layout(
@@ -221,7 +278,7 @@ def main():
         valider_saisies = st.button("Valider mes saisies")
 
     if valider_saisies:
-
+        st.header('5) Résultats')
         st.markdown(
         f"<div style='text-align: center; font-size: 24px; font-weight: bold; border: 2px solid black; padding: 10px;'> Impact = {impact_value}</div>",
         unsafe_allow_html=True)

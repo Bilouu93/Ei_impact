@@ -1,5 +1,8 @@
 [theme]
-base="light"
-backgroundColor = "rgba(0, 255, 0, 0.05)"
-secondaryBackgroundColor = "rgba(0, 255, 0, 0.1)"
+primaryColor="rgb(0, 124, 23)"
+backgroundColor = "rgb(242, 244, 221)"
+secondaryBackgroundColor = "rgba(250, 243, 194,0.35)"
+textColor="rgb(48, 60, 57)"
+font="sans serif"
+
 
