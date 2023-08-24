@@ -57,7 +57,7 @@ Housing_quality;0.01
 Access_to_local_services;0.04
 No_access_to_water;-0.03
 No_access_to_food;-0.08
-No_accès_to_health_services;-0.02
+No_acces_to_health_services;-0.02
 Noise_pollution;0.04
 Air_and_water_pollution;0.04
 Close_to_green_spaces;0.11
