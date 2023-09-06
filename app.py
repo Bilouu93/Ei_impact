@@ -5,6 +5,8 @@ import random
 import plotly.express as px
 import plotly.graph_objects as go
 from fonction_parametrage import *
+import pickle
+from Importation import B_input, Trans_AB, C_grp_input
 
 
 
@@ -127,7 +129,7 @@ def main():
         st.write(f"### <b>Groupe {group_id}</b>", unsafe_allow_html=True)
         with st.expander("Cliquez ici pour modifier la valeur des variables prédictives"):
             taille_pop = st.number_input(f"Valeur taille du groupe:", 
-                                            value = int(n_rd), 
+                                            #value = int(n_rd), 
                                             step=10, key=f"group{group_id}_taille" )
             N_pop.append(taille_pop)
             tau_pop_1 = st.number_input(r"$\tau_1$ croissance:", 
@@ -137,7 +139,7 @@ def main():
                                         value = 0.00, 
                                         step=0.01, key=f"group{group_id}_pop_tau_2" )
             st.markdown("---")
-            A_input[group_id][-1] = ('taille', taille_pop, tau_pop_1)
+            A_input[group_id][-1] = ('taille', taille_pop, tau_global)
             col1,col2,col3 = st.columns([5,1,5])
             with col1:
                 for n in range(int(len(L_var)/2)+1):
@@ -148,7 +150,7 @@ def main():
                     else:
                         rd_value = random.uniform(-0.2,1)
                     variable_value = st.number_input(f"Valeur _{L_var[n]}_:", 
-                                                        value = rd_value, 
+                                                        #value = rd_value, 
                                                         step=0.01, key=f"group{group_id}_{L_var[n]}" )
                     #st.markdown(f"Valeur <i>{L_var[n]}</i> ", unsafe_allow_html=True)
                     #variable_value = st.number_input(value = 0.00, step=0.01)
@@ -173,7 +175,7 @@ def main():
                     else:
                         rd_value = random.uniform(-0.2,1)
                     variable_value = st.number_input(f"Valeur _{L_var[n]}_:", 
-                                                        value = rd_value, 
+                                                        #value = rd_value, 
                                                         step=0.01, key=f"group{group_id}_{L_var[n]}" )
                     #st.markdown(f"Valeur <i>{L_var[n]}</i> ", unsafe_allow_html=True)
                     #variable_value = st.number_input(value = 0.00, step=0.01)
@@ -190,10 +192,13 @@ def main():
                     A_input[group_id][n] = (L_var[n], variable_value, tau_1)
                     st.markdown("---")
                 
-    
+    A_input = B_input
+    #A_input = C_grp_input
+    Trans = Trans_AB
     impact_class = Impact(A_input,Trans,horizon, unit_temps)
     impact_value = round(impact_class.impact_tot())
     n_tot = impact_class.n_glob()
+
 
 #-------------------------------------------------------------------------------------------------------------------------------------
 #Vérification paramétrage:
@@ -267,6 +272,7 @@ def main():
 
     if valider_saisies:
         st.header('5- Résultats')
+        #st.write(str(A_input))
         st.markdown(
         f"<div style='text-align: center; font-size: 24px; font-weight: bold; border: 2px solid black; padding: 10px;'> Impact = {impact_value}</div>",
         unsafe_allow_html=True)
@@ -295,6 +301,7 @@ def main():
 
         # Ajoutez les lignes verticales avec légendes
         val_n = 0
+        N_pop = impact_class.N_pop()
         for n in range(nb_gp):
             val_n += N_pop[n]
             Y = [min(I_n), max(I_n)]
@@ -357,6 +364,9 @@ def main():
             st.plotly_chart(fig_2)
 
             st.plotly_chart(fig_3)
+
+
+
 
 
 if __name__ == "__main__":
