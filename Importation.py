@@ -1,6 +1,6 @@
 import pandas as pd
 
-file_wb = './values.csv'
+file_wb = './values_complet.csv'
 df_wb = pd.read_csv(file_wb)
 file_ts = './value_transversal.csv'
 df_ts = pd.read_csv(file_ts)

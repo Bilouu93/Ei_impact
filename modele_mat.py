@@ -5,6 +5,10 @@ from Importation import dic_wb, df_wb, df_ts
 delta = 0.015 #taux d'actualisation
 
 alpha_ps = 0.004 #paramètre pour régler la référence sur p_s
+climatic = 0.05
+revenus = 0.06
+nb_pas = 10
+dic_pas = {'Années':1, 'Semestre':0.5, 'Trimestre':1/3, 'Mois':1/12, 'Jour':1/365}
 
 
 
@@ -27,10 +31,11 @@ def modele_transitoire(final, tau,t):
     return final*(1-np.exp(-t/(tau+0.001)))
 
 class Impact:
-    def __init__(self,input_A,Trans,horizon):
+    def __init__(self,input_A,Trans,horizon,pas):
         self.input_A = input_A
         self.Trans = Trans
         self.horizon = horizon
+        self.pas = pas
 
     def dic_A_n(self):
         dic_A_n = [] #Listes de dictionnaires des delta_A pour chaque instant
@@ -44,6 +49,18 @@ class Impact:
     def nb_gp(self):
         dic = self.input_A
         return len(list(dic.keys()))
+
+    def N_pop(self):
+        n = 1
+        N = 0
+        nb_gp = self.nb_gp()
+        N_list = np.zeros(nb_gp+1)
+        while n<nb_gp+1:
+            N+=self.input_A[n][-1][1]
+            N_list[n] = N
+            n+=1
+        return N_list
+
 
     def n_glob(self):
         return sum([self.input_A[k][-1][1] for k in range(1,self.nb_gp()+1)])
@@ -86,7 +103,7 @@ class Impact:
         dic_I = {}
         d_A_n = self.dic_A_n()
         for t in range(self.horizon):
-            fac = (1/(1+delta))**(t/12)                 #facteur d'actualisation
+            fac = (1/(1+delta))**(t*dic_pas[self.pas])                 #facteur d'actualisation
             wb = 0
             n_tot = 0                                      #wb à l'instant t sommé sur tous les couples (groupe, variable)
             for gp, X in d_A_n[t].items():
@@ -122,8 +139,21 @@ class Impact:
         d_A_n = self.dic_A_n()
         return sum([self.fonction_WB_inf(sum([d_A_n[t][k][-1][1]+0.1 for k in range(1,n)]) , t)*d_A_n[t][n][-1][1] for n in range(1,self.nb_gp()+1)])
 
+    def fonction_impact_somme_gp(self):
+        nb_gp = self.nb_gp()
+        hist = np.zeros(nb_gp)
+        N_pop = self.N_pop()
+        cat = [str(i) for i in range(nb_gp)]
+        for k in range(nb_gp):
+            hist[k] = np.sum(np.array([self.fonction_impact_gp(n) for n in np.arange(N_pop[k],N_pop[k+1])]))
+            cat[k] = f"groupe {k+1}"
+        data = pd.DataFrame({'Groupes': cat,
+                     'Impact': hist})
+        return data
+
+
     def impact_tot(self):
     # Calcule l'impact brut
         T = np.linspace(0,self.horizon -1,self.horizon, dtype=int)
         return sum([self.fonction_impact_temps(t) for t in T])
-
+        

@@ -1,0 +1,80 @@
+Niveau 1: Domaines,Niveau 2: variables macro,Variables,Valeurs
+Cadre socio-politique de vie,Socio-eco-polit environment,Criminality/Insecurity,-0.01
+Cadre socio-politique de vie,Socio-eco-polit environment,Discrimination,-0.02
+Cadre socio-politique de vie,Socio-eco-polit environment,Social coherence (cohésion sociale),0.0
+Cadre socio-politique de vie,Socio-eco-polit environment,Traditionalism,0.01
+Cadre socio-politique de vie,Socio-eco-polit environment,Years in state,0.02
+Environnement matériel et éducation,Academic and family education,Academic education,0.01
+Environnement matériel et éducation,Academic and family education,Family education,0.08
+Environnement matériel et éducation,Material environment,Access to local services,0.04
+Environnement matériel et éducation,Material environment,Air and water pollution,0.04
+Environnement matériel et éducation,Material environment,Close to green spaces,0.11
+Environnement matériel et éducation,Material environment,Housing quality,0.01
+Environnement matériel et éducation,Material environment,No accès to health services,-0.02
+Environnement matériel et éducation,Material environment,No access to food,-0.08
+Environnement matériel et éducation,Material environment,No access to water,-0.03
+Environnement matériel et éducation,Material environment,Noise pollution,0.04
+Environnement matériel et éducation,Material environment,"Richessness fauna, flaura and landscape",0.001
+Extrapersonnel,Comparaison to others,Relative health,0.03
+Extrapersonnel,Comparaison to others,Relative salary,0.03
+Extrapersonnel,Extra-person non family education,Family support,0.01
+Extrapersonnel,Extra-person non family education,Famlily strain,-0.02
+Extrapersonnel,Extra-person non family education,Friends support,0.01
+Extrapersonnel,Extra-person non family education,Having grandparents,0.01
+Extrapersonnel,Extra-person non family education,Number of children,0.0
+Extrapersonnel,Extra-person non family education,Partenaired,0.1
+Extrapersonnel,Extra-person non family education,Positive relationships,0.07
+Extrapersonnel,Extra-person non family education,Pregnancy,0.02
+Extrapersonnel,Extra-person non family education,Social Closeness,0.02
+Extrapersonnel,Extra-person non family education,Social integration,0.01
+Extrapersonnel,Extra-person non family education,Tobacco and alcohol of others,-0.02
+Extrapersonnel,Help/Receive,Contribution to others,-0.01
+Intrapersonnel,Evenement internal management,Emotional management,0.03
+Intrapersonnel,Evenement internal management,Managing impact of past experience,0.07
+Intrapersonnel,Evenement internal management,Positive habits,0.08
+Intrapersonnel,Evenement internal management,Stress management,0.08
+Intrapersonnel,Intensity,Coping active (proactivity),0.01
+Intrapersonnel,Intensity,Efforts in life,0.02
+Intrapersonnel,Intensity,Hypervigilence (=somatic amplification),-0.03
+Intrapersonnel,Intensity,Selective secondary control(=commitment),0.01
+Intrapersonnel,Interest for difference,Compensatory primary control,0.01
+Intrapersonnel,Interest for difference,Openness to new experiences,0.01
+Intrapersonnel,Organisation/design thinking,Evenement mastery,0.13
+Intrapersonnel,Organisation/design thinking,Goals in life,0.06
+Intrapersonnel,Organisation/design thinking,Self -control,0.15
+Intrapersonnel,Organisation/design thinking,Time management and anticipation,0.01
+Intrapersonnel,Personal values,(Need of Security),0.0
+Intrapersonnel,Personal values,Altruism,0.0
+Intrapersonnel,Personal values,Gratitude,0.05
+Intrapersonnel,Personal values,Honesty,0.0
+Intrapersonnel,Personality,Agreebleness,-0.03
+Intrapersonnel,Personality,Extraversion,0.05
+Intrapersonnel,Personality,Health locus of control,-0.01
+Intrapersonnel,Personality,Optimism,0.04
+Intrapersonnel,Personality,Social potency,-0.02
+Intrapersonnel,Personality,Sympathy,-0.01
+Intrapersonnel,Presence,Consciensciousness,0.01
+Intrapersonnel,Presence,Living the moment,0.01
+Intrapersonnel,Self confidence,Physical attractiveness,0.06
+Intrapersonnel,Self confidence,Self protection,0.02
+Intrapersonnel,Self confidence,Self-efficacy,0.05
+Santé,Addiction,Alcohol problems,-0.02
+Santé,Addiction,Drug consumption,-0.02
+Santé,Addiction,Food,0.0
+Santé,Addiction,Social networks,0.01
+Santé,Addiction,Tobacco,-0.02
+Santé,Mental health,Mental health professsionnal,-0.07
+Santé,Physical health,Aches,-0.07
+Santé,Physical health,Diseases,0.08
+Santé,Physical health,Sleep problems,-0.03
+Travail et activités,Occupations,Games,0.0
+Travail et activités,Occupations,Intellectual activities,0.01
+Travail et activités,Occupations,Physical activity,0.01
+Travail et activités,Occupations,Political participation,0.01
+Travail et activités,Occupations,Sex life,0.04
+Travail et activités,Occupations,Spiritual and religious experiences,0.05
+Travail et activités,Work,Assessment financial situation,0.04
+Travail et activités,Work,Assessment professionnal life,0.04
+Travail et activités,Work,Balance btw personal and professional life,0.02
+Travail et activités,Work,Control over professionnal life,0.02
+Travail et activités,Work,Financial situation effort,0.03
