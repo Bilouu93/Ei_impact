@@ -67,23 +67,24 @@ def main():
 #Choix de la dynamique
 #-------------------------------------------------------------------------------------------------------------------------------------
 
-    st.header("1- Choix de la dynamique")
+    st.header("1- Fenêtre de temps")
 
     unit_temps = ['Années','Semestre', 'Trimestre', 'Mois', 'Jour']
     unit_temps = st.radio("Choisir un mode de discrétisation:", unit_temps)
     pas = dic_pas[unit_temps]
 
 
-    options_tau = ['Macro','Micro']
-    option_tau = st.radio("Choisir un mode de sélection pour caractériser le régime transitoire:", options_tau)
 
 
 
-    bool_indiv = True
-    if option_tau == 'Macro':
-        tau_global = st.number_input(r"Transitoire  $ \ \tau_{glob}$:", value = 1.0, step=0.1) 
-        bool_indiv = False
-    horizon = st.number_input(f"Horizon  $ \ T$:", value = 10, step=1)
+
+    # bool_indiv = True
+    # if option_tau == 'Macro':
+    #     tau_global = st.number_input(r"Transitoire  $ \ \tau_{glob}$:", value = 1.0, step=0.1) 
+    #     bool_indiv = False
+    horizon = st.number_input(f"Taille de la fenêtre  $ \ T$:", value = 10, step=1)
+
+    Temps_calcul = st.number_input(r"Temps estimation projet  $ \ T_{projet}$:", value = 10, step=1)
 
 #-------------------------------------------------------------------------------------------------------------------------------------
 #Choix des variables transversales
@@ -120,26 +121,68 @@ def main():
     A_input = {}
     N_pop = []
 
+    options_tau = ['Macro','Micro']
+    option_tau = st.radio("Caractérisez le régime transitoire des variables spécifiques:", options_tau)
     # Saisie des variables pour chaque groupe
     for group_id in range(1, nb_gp + 1):
         n_rd = random.uniform(10,20)
         A_input[group_id] = [(str(i), 0.0, 0.0) for i in range(len(L_var) + 1)]
 
 
-        st.write(f"### <b>Groupe {group_id}</b>", unsafe_allow_html=True)
+        st.write(f"## <b>Groupe {group_id}</b>", unsafe_allow_html=True)
         with st.expander("Cliquez ici pour modifier la valeur des variables prédictives"):
-            taille_pop = st.number_input(f"Valeur taille du groupe:", 
-                                            #value = int(n_rd), 
+            st.write(f"### <b>Tailles de population</b>", unsafe_allow_html=True)
+            taille_pop = st.number_input(f"$N_{group_id}$ Taille du groupe:", 
+                                            value = int(n_rd), 
                                             step=10, key=f"group{group_id}_taille" )
-            N_pop.append(taille_pop)
-            tau_pop_1 = st.number_input(r"$\tau_1$ croissance:", 
+
+            tau_pop_glob = st.number_input(r"$\tau_{n_{glob}}$ Croissance:", 
                                         value = 1.00, 
                                         step=0.01, key=f"group{group_id}_pop_tau_1" )
-            tau_pop_2 = st.number_input(r"$\tau_2$ maturite:", 
-                                        value = 0.00, 
-                                        step=0.01, key=f"group{group_id}_pop_tau_2" )
+
+            a_pop = st.number_input(r"$a_{n_{glob}}$ Croissance:", 
+                                        value = 0.1, 
+                                        step=0.01, key=f"group{group_id}_a_pop" )
+
+            b_pop = st.number_input(r"$b_{n_{glob}}$ Déclin:", 
+                            value = 0.1, 
+                            step=0.01, key=f"group{group_id}_b_pop" )
+
+
+            ordres = ['FIFO','FILO']
+            ordre = st.radio("Choisir un mode de sélection pour caractériser le régime transitoire:", ordres, key=f"group{group_id}_ordre")
+            if ordre == 'FIFO':
+                FIFO = True
+            else:
+                FIFO = False
+
+
             st.markdown("---")
-            A_input[group_id][-1] = ('taille', taille_pop, tau_global)
+            A_input[group_id][-1] = ('taille', taille_pop, tau_pop_glob, a_pop, b_pop, FIFO)
+
+
+
+
+            if option_tau == 'Macro':
+                st.write(f"### <b>Dynamique macro des variables prédictives</b>", unsafe_allow_html=True)
+                fraction_K1_glob = st.number_input(f"$K_1$ Phase d'adaptation (fraction RP):", 
+                                                value = 0, 
+                                                step=10, key=f"group{group_id}_K1" )
+
+                tau_glob = st.number_input(r"$\tau_{glob}$ Croissance:", 
+                                            value = 1.00, 
+                                            step=0.01, key=f"group{group_id}_tau_glob" )
+
+                a_glob = st.number_input(r"$a_{glob}$ Croissance:", 
+                                            value = 0.1, 
+                                            step=0.01, key=f"group{group_id}_a_glob" )
+
+                b_glob = st.number_input(r"$b_{glob}$ Déclin:", 
+                                value = 0.1, 
+                                step=0.01, key=f"group{group_id}_b_glob" )
+
+                st.markdown("---")
+            st.write(f"### <b>Remplissage des valeurs</b>", unsafe_allow_html=True)
             col1,col2,col3 = st.columns([5,1,5])
             with col1:
                 for n in range(int(len(L_var)/2)+1):
@@ -150,21 +193,32 @@ def main():
                     else:
                         rd_value = random.uniform(-0.2,1)
                     variable_value = st.number_input(f"Valeur _{L_var[n]}_:", 
-                                                        #value = rd_value, 
+                                                        value = rd_value, 
                                                         step=0.01, key=f"group{group_id}_{L_var[n]}" )
-                    #st.markdown(f"Valeur <i>{L_var[n]}</i> ", unsafe_allow_html=True)
-                    #variable_value = st.number_input(value = 0.00, step=0.01)
+
+
                     if option_tau == 'Micro':
-                        tau_1 = st.number_input(f"$\\tau_1$ _{L_var[n]}_:", 
-                                                    value = 1.0, 
-                                                    step=0.5, key=f"group{group_id}_{L_var[n]}_tau_1" )
-                        tau_2 = st.number_input(f"$\\tau_2$ _{L_var[n]}_:", 
-                                                    value = 1.0, 
-                                                    step=0.5, key=f"group{group_id}_{L_var[n]}_tau_2" )                        
+                        fraction_K1 = st.number_input(f"$K_1$ Phase d'adaptation (fraction RP):", 
+                                                        value = 0, 
+                                                        step=10, key=f"group{group_id}_K1_{L_var[n]}" )
+
+                        tau = st.number_input(r"$\tau$ Croissance:", 
+                                                    value = 1.00, 
+                                                    step=0.01, key=f"group{group_id}_tau_{L_var[n]}" )
+
+                        a = st.number_input(r"$a$  Croissance:", 
+                                                    value = 0.1, 
+                                                    step=0.01, key=f"group{group_id}_a_glob_{L_var[n]}" )
+
+                        b = st.number_input(r"$b$  Déclin:", 
+                                        value = 0.1, 
+                                        step=0.01, key=f"group{group_id}_b_glob_{L_var[n]}" )                        
                     else:
-                        tau_1 = tau_pop_1
-                        tau_2 = tau_pop_2
-                    A_input[group_id][n] = (L_var[n], variable_value, tau_1)
+                        fraction_K1 = fraction_K1_glob
+                        tau = tau_glob
+                        a = a_glob
+                        b = b_glob
+                    A_input[group_id][n] = (L_var[n], fraction_K1*variable_value, variable_value, a, b)
                     st.markdown("---")
             with col3:
                 for n in range(int(len(L_var)/2) + 1, len(L_var)):
@@ -175,25 +229,39 @@ def main():
                     else:
                         rd_value = random.uniform(-0.2,1)
                     variable_value = st.number_input(f"Valeur _{L_var[n]}_:", 
-                                                        #value = rd_value, 
+                                                        value = rd_value, 
                                                         step=0.01, key=f"group{group_id}_{L_var[n]}" )
-                    #st.markdown(f"Valeur <i>{L_var[n]}</i> ", unsafe_allow_html=True)
-                    #variable_value = st.number_input(value = 0.00, step=0.01)
+
+
                     if option_tau == 'Micro':
-                        tau_1 = st.number_input(f"$\\tau_1$ _{L_var[n]}_:", 
-                                                    value = 1.0, 
-                                                    step=0.5, key=f"group{group_id}_{L_var[n]}_tau_1" )
-                        tau_2 = st.number_input(f"$\\tau_2$ _{L_var[n]}_:", 
-                                                    value = 1.0, 
-                                                    step=0.5, key=f"group{group_id}_{L_var[n]}_tau_2" )                        
+                        fraction_K1 = st.number_input(f"$K_1$ Phase d'adaptation (fraction RP):", 
+                                                        value = 0, 
+                                                        step=10, key=f"group{group_id}_K1_{L_var[n]}" )
+
+                        tau = st.number_input(r"$\tau$  Croissance:", 
+                                                    value = 1.00, 
+                                                    step=0.01, key=f"group{group_id}_tau_{L_var[n]}" )
+
+                        a = st.number_input(r"$a$  Croissance:", 
+                                                    value = 0.1, 
+                                                    step=0.01, key=f"group{group_id}_a_glob_{L_var[n]}" )
+
+                        b = st.number_input(r"$b$  Déclin:", 
+                                        value = 0.1, 
+                                        step=0.01, key=f"group{group_id}_b_glob_{L_var[n]}" )                        
                     else:
-                        tau_1 = tau_pop_1
-                        tau_2 = tau_pop_2
-                    A_input[group_id][n] = (L_var[n], variable_value, tau_1)
+                        fraction_K1 = fraction_K1_glob
+                        tau = tau_glob
+                        a = a_glob
+                        b = b_glob
+                    A_input[group_id][n] = (L_var[n], fraction_K1*variable_value, variable_value, a, b)
                     st.markdown("---")
                 
-    A_input = B_input
-    #A_input = C_grp_input
+    
+    #st.write(str(A_input))
+    #A_input = B_input
+
+    A_input = C_grp_input
     Trans = Trans_AB
     impact_class = Impact(A_input,Trans,horizon, unit_temps)
     impact_value = round(impact_class.impact_tot())
