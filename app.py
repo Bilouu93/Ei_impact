@@ -1,12 +1,15 @@
 import streamlit as st
 import numpy as np
-from modele_mat import *
+#from modele_mat import *
+from modele_bis_mat import *
 import random
 import plotly.express as px
 import plotly.graph_objects as go
 from fonction_parametrage import *
 import pickle
 from Importation import B_input, Trans_AB, C_grp_input
+import plotly.colors as pc
+import locale
 
 
 
@@ -27,7 +30,15 @@ L_trans = ['Non Menace nouveaux entrants',
     'SAV/communication clients',
     'Cohérence du postionnement']
 
-dic_pas = {'Années':1, 'Semestre':0.5, 'Trimestre':1/3, 'Mois':1/12, 'Jour':1/365}
+
+
+
+# Définissez la configuration régionale pour formater les nombres avec des espaces pour les milliers
+locale.setlocale(locale.LC_ALL, '')
+
+# Fonction pour formater un nombre avec des espaces pour les milliers
+def format_number(number):
+    return locale.format_string("%d", number, grouping=True)
 
 
 def main():
@@ -67,11 +78,25 @@ def main():
 #Choix de la dynamique
 #-------------------------------------------------------------------------------------------------------------------------------------
 
-    st.header("1- Fenêtre de temps")
+    st.header("1- Fenêtre temporelle et individuelle")
 
     unit_temps = ['Années','Semestre', 'Trimestre', 'Mois', 'Jour']
-    unit_temps = st.radio("Choisir un mode de discrétisation:", unit_temps)
-    pas = dic_pas[unit_temps]
+    unit_indiv = ['Millions','Centaine de milliers', 'Dizaine de milliers', 'Milliers', 'Centaine', 'Dizaine', 'Unitaire']
+    dic_pas_temps = {'Années':1, 'Semestre':0.5, 'Trimestre':1/3, 'Mois':1/12, 'Jour':1/365}
+    dic_pas_indiv = {unit_indiv[0]: 1e6, unit_indiv[1]: 1e5, unit_indiv[2]: 1e4, unit_indiv[3]: 1e3, unit_indiv[4]: 1e2, unit_indiv[5]: 1e1, unit_indiv[6]: 1}
+
+    default_selection_temps = unit_temps.index('Semestre')
+    default_selection_indiv = unit_indiv.index('Centaine')
+
+    col_1, col_2 = st.columns(2)
+    with col_1:
+        unit_temps = st.radio("Choisir une unité:", unit_temps, index = default_selection_temps)
+    with col_2:
+        unit_indiv = st.radio("Choisir une unité:", unit_indiv, index = default_selection_indiv)
+
+    pas_temps = dic_pas_temps[unit_temps]
+    pas_indiv = dic_pas_indiv[unit_indiv]
+
 
 
 
@@ -82,9 +107,7 @@ def main():
     # if option_tau == 'Macro':
     #     tau_global = st.number_input(r"Transitoire  $ \ \tau_{glob}$:", value = 1.0, step=0.1) 
     #     bool_indiv = False
-    horizon = st.number_input(f"Taille de la fenêtre  $ \ T$:", value = 10, step=1)
-
-    Temps_calcul = st.number_input(r"Temps estimation projet  $ \ T_{projet}$:", value = 10, step=1)
+    horizon = st.number_input(f"Taille de la fenêtre  $ \ T$:", value = 40, step=1)
 
 #-------------------------------------------------------------------------------------------------------------------------------------
 #Choix des variables transversales
@@ -111,10 +134,19 @@ def main():
                 Trans[n] = trans_value-100
 
 #-------------------------------------------------------------------------------------------------------------------------------------
+#Cout du projet
+#-------------------------------------------------------------------------------------------------------------------------------------
+    st.header("3- Les coûts d'opportunité")
+    money_cost = st.number_input("Coût financier du projet en millier d'euros", value=1000, step=1)
+    money_cost *= 1000
+    env_cost = st.number_input('Coût environnemental du projet en tonnes de CO2eq', value=1000, step=1)
+    necessity = st.number_input('Nécessité dans le contexte environnemental', value=1.00, step=0.01)
+
+#-------------------------------------------------------------------------------------------------------------------------------------
 #Gropues de population
 #-------------------------------------------------------------------------------------------------------------------------------------
 
-    st.header("3- Caractérisation des groupes de population")
+    st.header("4- Caractérisation des groupes de population")
     # Demander à l'utilisateur de saisir le nombre de groupes
     nb_gp = st.number_input("Nombre de groupes:", value = 2, min_value=1, step=1)
 
@@ -125,7 +157,7 @@ def main():
     option_tau = st.radio("Caractérisez le régime transitoire des variables spécifiques:", options_tau)
     # Saisie des variables pour chaque groupe
     for group_id in range(1, nb_gp + 1):
-        n_rd = random.uniform(10,20)
+        n_rd = random.uniform(10,30)
         A_input[group_id] = [(str(i), 0.0, 0.0) for i in range(len(L_var) + 1)]
 
 
@@ -137,15 +169,15 @@ def main():
                                             step=10, key=f"group{group_id}_taille" )
 
             tau_pop_glob = st.number_input(r"$\tau_{n_{glob}}$ Croissance:", 
-                                        value = 1.00, 
+                                        value = 30.00, 
                                         step=0.01, key=f"group{group_id}_pop_tau_1" )
 
             a_pop = st.number_input(r"$a_{n_{glob}}$ Croissance:", 
-                                        value = 0.1, 
+                                        value = 0.3, 
                                         step=0.01, key=f"group{group_id}_a_pop" )
 
             b_pop = st.number_input(r"$b_{n_{glob}}$ Déclin:", 
-                            value = 0.1, 
+                            value = 0.3, 
                             step=0.01, key=f"group{group_id}_b_pop" )
 
 
@@ -170,15 +202,15 @@ def main():
                                                 step=10, key=f"group{group_id}_K1" )
 
                 tau_glob = st.number_input(r"$\tau_{glob}$ Croissance:", 
-                                            value = 1.00, 
+                                            value = 30.00, 
                                             step=0.01, key=f"group{group_id}_tau_glob" )
 
                 a_glob = st.number_input(r"$a_{glob}$ Croissance:", 
-                                            value = 0.1, 
+                                            value = 0.2, 
                                             step=0.01, key=f"group{group_id}_a_glob" )
 
                 b_glob = st.number_input(r"$b_{glob}$ Déclin:", 
-                                value = 0.1, 
+                                value = 0.3, 
                                 step=0.01, key=f"group{group_id}_b_glob" )
 
                 st.markdown("---")
@@ -218,7 +250,7 @@ def main():
                         tau = tau_glob
                         a = a_glob
                         b = b_glob
-                    A_input[group_id][n] = (L_var[n], fraction_K1*variable_value, variable_value, a, b)
+                    A_input[group_id][n] = (L_var[n], fraction_K1*variable_value, variable_value, tau, a, b)
                     st.markdown("---")
             with col3:
                 for n in range(int(len(L_var)/2) + 1, len(L_var)):
@@ -254,18 +286,25 @@ def main():
                         tau = tau_glob
                         a = a_glob
                         b = b_glob
-                    A_input[group_id][n] = (L_var[n], fraction_K1*variable_value, variable_value, a, b)
+                    A_input[group_id][n] = (L_var[n], fraction_K1*variable_value, variable_value, tau, a, b)
                     st.markdown("---")
                 
     
     #st.write(str(A_input))
     #A_input = B_input
 
-    A_input = C_grp_input
+    #A_input = C_grp_input
     Trans = Trans_AB
-    impact_class = Impact(A_input,Trans,horizon, unit_temps)
-    impact_value = round(impact_class.impact_tot())
+    impact_class = Impact(A_input,Trans,horizon, pas_temps, money_cost, env_cost, necessity, pas_indiv)
+    Solutions = impact_class.solutions_t1_t2()
+    impact_value = round(impact_class.impact_tot(Solutions))
     n_tot = impact_class.n_glob()
+    money = impact_class.money_cost_opp()
+    envt = impact_class.env_cost_opp()
+    cat = ['Impact contrefactuel brut', 'Impact contrefactuel net', "Coût d'opportunité financier", "Coût d'opportunité environnemental"]
+    list_impact = [impact_value, impact_value - money - envt, money, envt]
+    colors = {cat[0]: "blue", cat[1]: "green", cat[2]: "red", cat[3]: "magenta"}
+    df_imp = pd.DataFrame({'Type Impacts/Coûts': cat, 'Valeur': list_impact})
 
 
 #-------------------------------------------------------------------------------------------------------------------------------------
@@ -273,7 +312,7 @@ def main():
 #-------------------------------------------------------------------------------------------------------------------------------------
 
 
-    st.header('4- Vérification du paramétrage de $k_t$ et $p_s$')
+    st.header('5- Vérification du paramétrage de $k_t$ et $p_s$')
     with st.expander("Cliquez ici pour vérifier le parametrage des fonction $k_t$ et $p_s$"):
         Kt_list = np.linspace(-w_t,0,100)
         Ks_list = np.linspace(-w_s,0,100)
@@ -339,28 +378,65 @@ def main():
 
 
     if valider_saisies:
-        st.header('5- Résultats')
+        st.header('6- Résultats')
+        imp_net = format_number(impact_value-money-envt)
         #st.write(str(A_input))
         st.markdown(
-        f"<div style='text-align: center; font-size: 24px; font-weight: bold; border: 2px solid black; padding: 10px;'> Impact = {impact_value}</div>",
+        f"<div style='text-align: center; font-size: 24px; font-weight: bold; border: 2px solid black; padding: 10px;'> Impact contrefactuel net = {imp_net}</div>",
         unsafe_allow_html=True)
+        
 
-        n = np.linspace(0, n_tot, 100)
+
+
+        n = np.arange(1,n_tot)
         t = np.linspace(0,horizon -1,horizon, dtype=int)
 
-        imp_gp_vect = np.vectorize(impact_class.fonction_impact_gp)
-        I_n = imp_gp_vect(n)
+        imp_gp_vect = np.vectorize(impact_class.fonction_impact_gp, otypes=[np.float32])
+        I_n = imp_gp_vect(n, Solutions)
 
-        imp_temps_vect = np.vectorize(impact_class.fonction_impact_temps)
-        I_t = imp_temps_vect(t)
+        imp_temps_vect = np.vectorize(impact_class.fonction_impact_temps, otypes=[np.float32])
+        I_t = imp_temps_vect(t, Solutions)
 
-        imp_vectorized = np.vectorize(impact_class.fonction_WB_inf)
+        L_temps_gp = []
+        for k in range(nb_gp):
+            imp_tps_gp = np.vectorize(impact_class.fonction_impact_temps_gp, otypes=[np.float32])
+            L_temps_gp.append(imp_tps_gp(k+1, t, Solutions))
+
+        # L_temps_gp = []
+        # for k in range(nb_gp):
+        #     fonction = impact_class.fonction_impact_temps_gp
+        #     imp_tps_gp = np.array([fonction(k+1,t_k,Solutions) for t_k in t])
+        #     L_temps_gp.append(imp_tps_gp)
+        # #st.write(str(L_temps_gp))
+
+        f_WB_1 = impact_class.f_WB
+        def f_WB_real(n,t):
+            return f_WB_1(n,t, Solutions)
+
+
         N, T = np.meshgrid(n, t)
-        I_nt = imp_vectorized(N,T)
+        f_WB_vect = np.vectorize(f_WB_real, otypes=[np.float32])
+        I_nt = f_WB_vect(N,T)
 
-        hist = impact_class.fonction_impact_somme_gp()
+        n = pas_indiv*n
+
+
+        hist = impact_class.fonction_impact_somme_gp(Solutions)
+
+        grid_layout = go.Layout(
+            xaxis=dict(gridcolor='gray', gridwidth=1),  # Grille grise plus foncée sur l'axe des x
+            yaxis=dict(gridcolor='gray', gridwidth=1)   # Grille grise plus foncée sur l'axe des y
+        )
 
         black_with_opacity = 'rgba(0, 0, 0, 0.4)'
+
+        fig_7 = px.bar(df_imp, x= 'Type Impacts/Coûts', y='Valeur', text='Valeur', title='Impacts et coûts')
+        fig_7.update_traces(marker=dict(color=df_imp["Type Impacts/Coûts"].map(colors)))
+        fig_7.update_coloraxes(showscale=False)
+        fig_7.update_traces(texttemplate='%{text:,}')
+
+
+
         # Créer un graphe interactif Plotly
         fig_1 = go.Figure()
 
@@ -370,24 +446,17 @@ def main():
         # Ajoutez les lignes verticales avec légendes
         val_n = 0
         N_pop = impact_class.N_pop()
+        palette = px.colors.qualitative.G10
         for n in range(nb_gp):
-            val_n += N_pop[n]
-            Y = [min(I_n), max(I_n)]
-
-            fig_1.add_shape(go.layout.Shape(
-                type='line',
-                x0=val_n,
-                x1=val_n,
-                y0=Y[0],
-                y1=Y[1],
-                line=dict(color='black', width=2, dash='dash'),
-                name=f"groupe {n + 1}"
-            ))
+            color = palette[n % len(palette)]
+            fig_1.add_vrect(x0=int(N_pop[n]*pas_indiv), x1= int(N_pop[n+1]*pas_indiv), annotation_text= f"Groupe {n+1}", annotation_position = 'bottom', fillcolor= color, opacity=0.3)
+            fig_1.add_vline(x=N_pop[n], line_dash="dash")
 
 
         fig_1.update_xaxes(title_text='Population touchée')
         fig_1.update_yaxes(title_text='Well-being sommé sur le temps')
         fig_1.update_layout(width = 650)
+        fig_1.update_traces(texttemplate='%{text:,}')
 
         rge = max(abs(min(hist['Impact'])), abs(max(hist['Impact'])))
         color_range = [-rge, rge]
@@ -395,6 +464,7 @@ def main():
         fig_6 = px.bar(hist, x='Groupes', y='Impact', title='Distribution des groupes', 
                         color='Impact', color_continuous_scale='RdYlGn', range_color = color_range)
         fig_6.update_coloraxes(showscale=False)
+        fig_6.update_traces(texttemplate='%{text:,}')
 
 
         fig_6.update_layout(width = 650)
@@ -403,20 +473,29 @@ def main():
 #            xaxis=dict(showgrid=True, gridcolor=black_with_opacity),
 #            yaxis=dict(showgrid=True, gridcolor=black_with_opacity)
 #        )
-
-        fig_2 = px.line(x=t, y=I_t, title='Fonction du WB collectif')
-        fig_2.update_traces(line=dict(color='blue', dash='solid'))
+        fig_2 = go.Figure()
+        palette = px.colors.qualitative.G10
+        color = palette[0]
+        fig_2.add_trace(go.Scatter(x=t, y=I_t, mode='lines', name='WB collectif', line=dict(color=color, dash='solid')))
+        for k in range(1,len(L_temps_gp)+1):
+            color = palette[k % len(palette)]
+            fig_2.add_trace(go.Scatter(x=t, y=L_temps_gp[k-1], mode='lines', name=f'WB groupe {k+1}', line=dict(color=color, dash='solid')))
         fig_2.update_xaxes(title_text=f'Temps en {unit_temps}')
         fig_2.update_yaxes(title_text='Well-being collectif')
+        fig_2.update_traces(texttemplate='%{text:,}')
 
-        fig_2.update_layout(
-            xaxis=dict(showgrid=True, gridcolor=black_with_opacity),
-            yaxis=dict(showgrid=True, gridcolor=black_with_opacity)
-        )
 
-        fig_3 = go.Figure(data=[go.Surface(z=I_nt, x=N, y=T,  colorscale='RdYlGn')])
+
+        fig_3 = go.Figure(data=[go.Surface(z=I_nt, x=100*N, y=T,  colorscale='RdYlGn')])
         fig_3.update_layout(title='Fonction du WB indiv')
         fig_3.update_scenes(xaxis_title='N', yaxis_title='T', zaxis_title='WB')
+
+
+        col1, col2, col3 = st.columns([2,6,1])
+
+        with col2:
+            st.plotly_chart(fig_7)
+
 
 
         col1, col2 =st.columns(2)
