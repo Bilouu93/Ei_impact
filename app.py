@@ -1,7 +1,8 @@
 import streamlit as st
 import numpy as np
 #from modele_mat import *
-from modele_bis_mat import *
+#from modele_bis_mat import *
+from modele_mat_rapide import *
 import random
 import plotly.express as px
 import plotly.graph_objects as go
@@ -107,7 +108,7 @@ def main():
     # if option_tau == 'Macro':
     #     tau_global = st.number_input(r"Transitoire  $ \ \tau_{glob}$:", value = 1.0, step=0.1) 
     #     bool_indiv = False
-    horizon = st.number_input(f"Taille de la fenêtre  $ \ T$:", value = 40, step=1)
+    horizon = st.number_input(f"Taille de la fenêtre  $ \ T$:", value = 100, step=1)
 
 #-------------------------------------------------------------------------------------------------------------------------------------
 #Choix des variables transversales
@@ -157,7 +158,7 @@ def main():
     option_tau = st.radio("Caractérisez le régime transitoire des variables spécifiques:", options_tau)
     # Saisie des variables pour chaque groupe
     for group_id in range(1, nb_gp + 1):
-        n_rd = random.uniform(10,30)
+        n_rd = random.uniform(100,200)
         A_input[group_id] = [(str(i), 0.0, 0.0) for i in range(len(L_var) + 1)]
 
 
@@ -169,7 +170,7 @@ def main():
                                             step=10, key=f"group{group_id}_taille" )
 
             tau_pop_glob = st.number_input(r"$\tau_{n_{glob}}$ Croissance:", 
-                                        value = 30.00, 
+                                        value = 80.00, 
                                         step=0.01, key=f"group{group_id}_pop_tau_1" )
 
             a_pop = st.number_input(r"$a_{n_{glob}}$ Croissance:", 
@@ -202,7 +203,7 @@ def main():
                                                 step=10, key=f"group{group_id}_K1" )
 
                 tau_glob = st.number_input(r"$\tau_{glob}$ Croissance:", 
-                                            value = 30.00, 
+                                            value = 80.00, 
                                             step=0.01, key=f"group{group_id}_tau_glob" )
 
                 a_glob = st.number_input(r"$a_{glob}$ Croissance:", 
@@ -296,8 +297,8 @@ def main():
     #A_input = C_grp_input
     Trans = Trans_AB
     impact_class = Impact(A_input,Trans,horizon, pas_temps, money_cost, env_cost, necessity, pas_indiv)
-    Solutions = impact_class.solutions_t1_t2()
-    impact_value = round(impact_class.impact_tot(Solutions))
+    #Solutions = impact_class.solutions_t1_t2()
+    impact_value = round(impact_class.impact_tot())
     n_tot = impact_class.n_glob()
     money = impact_class.money_cost_opp()
     envt = impact_class.env_cost_opp()
@@ -392,15 +393,15 @@ def main():
         t = np.linspace(0,horizon -1,horizon, dtype=int)
 
         imp_gp_vect = np.vectorize(impact_class.fonction_impact_gp, otypes=[np.float32])
-        I_n = imp_gp_vect(n, Solutions)
+        I_n = imp_gp_vect(n)
 
         imp_temps_vect = np.vectorize(impact_class.fonction_impact_temps, otypes=[np.float32])
-        I_t = imp_temps_vect(t, Solutions)
+        I_t = imp_temps_vect(t)
 
         L_temps_gp = []
         for k in range(nb_gp):
             imp_tps_gp = np.vectorize(impact_class.fonction_impact_temps_gp, otypes=[np.float32])
-            L_temps_gp.append(imp_tps_gp(k+1, t, Solutions))
+            L_temps_gp.append(imp_tps_gp(k+1, t))
 
         # L_temps_gp = []
         # for k in range(nb_gp):
@@ -410,18 +411,18 @@ def main():
         # #st.write(str(L_temps_gp))
 
         f_WB_1 = impact_class.f_WB
-        def f_WB_real(n,t):
-            return f_WB_1(n,t, Solutions)
+        # def f_WB_real(n,t):
+        #     return f_WB_1(n,t, Solutions)
 
 
         N, T = np.meshgrid(n, t)
-        f_WB_vect = np.vectorize(f_WB_real, otypes=[np.float32])
+        f_WB_vect = np.vectorize(f_WB_1, otypes=[np.float32])
         I_nt = f_WB_vect(N,T)
 
         n = pas_indiv*n
 
 
-        hist = impact_class.fonction_impact_somme_gp(Solutions)
+        hist = impact_class.fonction_impact_somme_gp()
 
         grid_layout = go.Layout(
             xaxis=dict(gridcolor='gray', gridwidth=1),  # Grille grise plus foncée sur l'axe des x
@@ -450,13 +451,12 @@ def main():
         for n in range(nb_gp):
             color = palette[n % len(palette)]
             fig_1.add_vrect(x0=int(N_pop[n]*pas_indiv), x1= int(N_pop[n+1]*pas_indiv), annotation_text= f"Groupe {n+1}", annotation_position = 'bottom', fillcolor= color, opacity=0.3)
-            fig_1.add_vline(x=N_pop[n], line_dash="dash")
+            fig_1.add_vline(x=int(N_pop[n]*pas_indiv), line_dash="dash")
 
 
         fig_1.update_xaxes(title_text='Population touchée')
         fig_1.update_yaxes(title_text='Well-being sommé sur le temps')
         fig_1.update_layout(width = 650)
-        fig_1.update_traces(texttemplate='%{text:,}')
 
         rge = max(abs(min(hist['Impact'])), abs(max(hist['Impact'])))
         color_range = [-rge, rge]
@@ -464,7 +464,6 @@ def main():
         fig_6 = px.bar(hist, x='Groupes', y='Impact', title='Distribution des groupes', 
                         color='Impact', color_continuous_scale='RdYlGn', range_color = color_range)
         fig_6.update_coloraxes(showscale=False)
-        fig_6.update_traces(texttemplate='%{text:,}')
 
 
         fig_6.update_layout(width = 650)
