@@ -1,19 +1,20 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from Importation import dic_wb, df_wb, df_ts
+from Importation import *
 from scipy.optimize import bisect
 
 
 delta = 0.015 #taux d'actualisation
 
 alpha_ps = 0.004 #paramètre pour régler la référence sur p_s
-
-
+beta_xlim = 1.5
+alpha_per = 0.05
+alpha_par = 0.75
 
 #Worst case
 df = df_ts.copy()
-df['input'] = np.array([100 for i in range(14)])
+df['input'] = np.array([100 for i in range(7)])
 wt = sum(df['input']*df['Coef reg kt non normalisé'])
 ws = sum(df['input']*df['Coef reg ps non normalisé'])
 
@@ -21,7 +22,7 @@ climatic = 0.1
 revenus = 0.4
 
 class Impact:
-    def __init__(self, input_A, Trans, horizon, pas, money_cost, env_cost, necessity, pas_indiv):
+    def __init__(self, input_A, Trans, horizon, pas, money_cost, env_cost, necessity, pas_indiv, ressources):
         self.input_A = input_A
         self.Trans = Trans
         self.horizon = horizon
@@ -30,6 +31,7 @@ class Impact:
         self.env_cost = env_cost
         self.necessity = necessity
         self.pas_indiv = pas_indiv
+        self.ressources = ressources
 
         self.nb_gp_value = self.nb_gp() 
         self.N_pop_tot = self.N_pop()
@@ -96,13 +98,15 @@ class Impact:
 
     def Kt(self):
         df = df_ts.copy()
-        df['input'] = self.Trans
+        df_2 = pd.DataFrame.from_dict(self.Trans, 'index', columns=['Valeur']).reset_index()
+        df['input'] = df_2['Valeur']
         return sum(df['input']*df['Coef reg kt non normalisé'])
 
     def kt_1(self):
         arg_1 = (np.exp(1)-1)/wt
         arg_2 = np.exp(1)
-        return np.log(arg_1*self.Kt_value+arg_2)
+        kt = np.log(arg_1*self.Kt_value+arg_2)
+        return kt
 
     def kt_2(self):
         arg = -3*(self.Kt_value+wt)/(wt)
@@ -110,13 +114,15 @@ class Impact:
 
     def Ks(self):
         df = df_ts.copy()
-        df['input'] = self.Trans
+        df_2 = pd.DataFrame.from_dict(self.Trans, 'index', columns=['Valeur']).reset_index()
+        df['input'] = df_2['Valeur']
         final = 0.004 * sum(df['input']*df['Coef reg ps non normalisé'])
         return final
 
     def ps(self, beta=0.05):
         arg = np.exp(-self.Ks_value)
-        return 1/(1+beta*arg)
+        p_s = 1/(1+beta*arg)
+        return p_s
 
     def groupe(self, n):
         N_list = self.N_pop_tot
@@ -134,6 +140,46 @@ class Impact:
             b = self.input_A[k+1][-1][4]
             L_temps[k] = tau_glob*(1+5*b)
         return max(L_temps)
+
+    def transfo_1(self,x):
+        return (1-np.exp(-x/beta_xlim))
+
+    def transfo_2(self, X):
+        return np.log((100+X)/(100-X))
+
+    def transfo_2_inv(self, y):
+        def f(x):
+            return  self.transfo_2(x) - y
+        t_solution = bisect(f, 0, 100-1e-5, xtol=0.01, maxiter=50)
+        return t_solution
+
+    def delta_trans_1_var(self, var):
+        R = self.ressources
+        arg = np.sum(np.array([dic_EI[m][var]*R[m] for m in R.keys()]))
+        if var != 'Pérennité':
+            return ((100-(self.Trans[var]+100))*self.transfo_1(arg), arg)
+        else:
+            return arg*alpha_per
+        
+    def delta_trans_2_var(self, var):
+        R = self.ressources
+        T = self.Trans
+        arg_1 = np.sum(np.array([dic_EI[m][var]*R[m] for m in R.keys()]))
+        if var != 'Pérennité':
+            arg_avant = self.transfo_2(T[var]+100)
+            arg_2 = (1+alpha_par*arg_1)*arg_avant
+            return (self.transfo_2_inv(arg_2) - (T[var]+100), arg_avant, arg_2)
+        else:
+            return arg_1*alpha_per
+
+    def delta_trans_1(self):
+        d_delta_var_1 = {var: self.delta_trans_1_var(var) for var in variables_EI}
+        return d_delta_var_1
+
+    def delta_trans_2(self):
+        d_delta_var_2 = {var: self.delta_trans_2_var(var) for var in variables_EI}
+        return d_delta_var_2
+
 
     def solution(self, n):
         gp = self.groupe(n)

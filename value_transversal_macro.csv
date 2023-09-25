@@ -1,0 +1,8 @@
+,Variables macro,Coef reg kt non normalisé,Coef reg ps non normalisé
+0,No_Concurrence,6.0,3
+1,No_Pouvoir des agents terminaux,0.5,2
+2,Expertise domaine,2.0,1
+3,Expertise opérationnelle,0.75,2
+4,Ressources financières,0.5,2
+5,Expertise marketing,0.0,2
+6,Innovation,2.0,0

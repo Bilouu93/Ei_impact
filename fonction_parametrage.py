@@ -8,7 +8,7 @@ def K_t(X):
     df['input'] = X
     return sum(df['input']*df['Coef reg kt non normalisé'])
 
-w_t = K_t(np.array([100 for i in range(14)])) # worst case
+w_t = K_t(np.array([100 for i in range(7)])) # worst case
 
 #Modèle logarithmique, faible concavité
 def kt_1(K):
@@ -32,7 +32,7 @@ def K_s(X):
     df['input'] = X
     return alpha_ps*sum(df['input']*df['Coef reg ps non normalisé'])
 
-w_s = K_s(np.array([100 for i in range(14)])) # worst case
+w_s = K_s(np.array([100 for i in range(7)])) # worst case
 
 #Regression logistique asymétrique
 def p_s(K, beta=0.05):

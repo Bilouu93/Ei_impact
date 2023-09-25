@@ -67,9 +67,7 @@ def main():
 #Choix de la dynamique
 #-------------------------------------------------------------------------------------------------------------------------------------
 
-    st.header("1- Paramètres globaux")
-
-    EI = st.checkbox("Déterminer la contibution d'Elements Impact dans le projet")
+    st.header("1- Fenêtre temporelle et individuelle")
 
     unit_temps = ['Années','Semestre', 'Trimestre', 'Mois', 'Jour']
     unit_indiv = ['Millions','Centaine de milliers', 'Dizaine de milliers', 'Milliers', 'Centaine', 'Dizaine', 'Unitaire']
@@ -87,8 +85,6 @@ def main():
 
     pas_temps = dic_pas_temps[unit_temps]
     pas_indiv = dic_pas_indiv[unit_indiv]
-
-    
 
 
 
@@ -288,104 +284,83 @@ def main():
 
     #A_input = C_grp_input
     #Trans = Trans_AB
-    compteur_titres = 4
-    compteur_titres +=1
-    if not EI:
-        impact_class = Impact(A_input,Trans,horizon, pas_temps, money_cost, env_cost, necessity, pas_indiv, None)
-        impact_value = round(impact_class.impact_tot())
-        n_tot = impact_class.n_glob()
-        money = impact_class.money_cost_opp()
-        envt = impact_class.env_cost_opp()
-        cat = ['Impact brut', 'Impact contrefactuel net', "Coût d'opportunité financier", "Coût d'opportunité environnemental"]
-        colors = {cat[0]: "blue", cat[1]: "green", cat[2]: "red", cat[3]: "magenta"}
-        list_impact = [impact_value, impact_value - money - envt, money, envt]
-        df_imp = pd.DataFrame({'Type Impacts/Coûts': cat, 'Valeur': list_impact})
+    st.header("5- L'allocation des ressources")
+
+    data_EI = []
+    for m in metier_EI:
+        for i in range(1,6):
+            data_EI.append([m, i, 10, 1])
+
+    df_EI = pd.DataFrame(data_EI, columns=['Métier', 'Expertise', 'Ressources staff', 'Ressources EI'])
+    edited_EI = st.data_editor(df_EI)
+    df_EI_copy = df_EI.copy()
+    df_EI_copy['num'] = (df_EI_copy['Ressources EI']*df_EI_copy['Expertise'])
+    df_EI_copy['den'] = (df_EI_copy['Ressources EI']+df_EI_copy['Ressources staff'])*df_EI_copy['Expertise']
+    df_ressources = (df_EI_copy.groupby('Métier')['num'].sum() / df_EI_copy.groupby('Métier')['den'].sum()).reset_index()
+
+    df_ressources = df_ressources.rename(columns={0: 'augmentation_ressources'}).set_index('Métier')['augmentation_ressources']
+    ressources = df_ressources.to_dict()
+
+    impact_class = Impact(A_input,Trans,horizon, pas_temps, money_cost, env_cost, necessity, pas_indiv, ressources)
+    #Solutions = impact_class.solutions_t1_t2()
+    impact_value = round(impact_class.impact_tot())
+    n_tot = impact_class.n_glob()
+    money = impact_class.money_cost_opp()
+    envt = impact_class.env_cost_opp()
+
+
+
+    delta_trans_1 = impact_class.delta_trans_1()
+    delta_trans_2 = impact_class.delta_trans_2()
+    transfo_1 = impact_class.transfo_1
+    transfo_2_inv = impact_class.transfo_2_inv
+
 
     
+    tuples_1 = list(delta_trans_1.values())
+    tuples_2 = list(delta_trans_2.values())
 
-    if EI:
-        st.header(f"{compteur_titres}- L'allocation des ressources")
-        compteur_titres +=1
-        data_EI = []
-        for m in metier_EI:
-            for i in range(1,6):
-                data_EI.append([m, i, 4, 1])
+    categories = list(delta_trans_1.keys())[:-1]
+    trans = (np.array([list(Trans.values())])+100)[0]
+    values_1_w = np.array([t[0] for t in tuples_1[:-1]])
+    values_2_w = np.array([t[0] for t in tuples_2[:-1]])
+    values_1 = trans + values_1_w
+    values_2 = trans + values_2_w
 
-        df_EI = pd.DataFrame(data_EI, columns=['Métier', 'Expertise', 'Ressources staff', 'Ressources EI'])
-        edited_EI = st.data_editor(df_EI)
-        df_EI_copy = df_EI.copy()
-        df_EI_copy['num'] = (df_EI_copy['Ressources EI']*df_EI_copy['Expertise'])
-        df_EI_copy['den'] = (df_EI_copy['Ressources EI']+df_EI_copy['Ressources staff'])*df_EI_copy['Expertise']
-        df_ressources = (df_EI_copy.groupby('Métier')['num'].sum() / df_EI_copy.groupby('Métier')['den'].sum()).reset_index()
+    Trans_EI = dict(zip(categories, values_1-100))
+    B_input = copy.deepcopy(A_input)
+    k_per = 1 + tuples_1[-1]
+    for i in range(1,nb_gp+1):
+        B_input[i][-1][3] *= 1/(1+k_per)
+        B_input[i][-1][4] *= 1/(1+k_per)
+        B_input[i][-1][2] *= k_per 
+    for i in range(1,nb_gp+1):
+        for k in range(len(B_input[1])-1):
+            B_input[i][k][3] *= 1/(1+k_per)
+            B_input[i][k][4] *= 1/(1+k_per)
+            B_input[i][k][3] *= k_per
 
-        df_ressources = df_ressources.rename(columns={0: 'augmentation_ressources'}).set_index('Métier')['augmentation_ressources']
-        ressources = df_ressources.to_dict()
-        impact_class = Impact(A_input,Trans,horizon, pas_temps, money_cost, env_cost, necessity, pas_indiv, ressources)
-        impact_value = round(impact_class.impact_tot())
-        n_tot = impact_class.n_glob()
-        money = impact_class.money_cost_opp()
-        envt = impact_class.env_cost_opp()
-
-        
-
+    #st.write(Trans_EI, Trans, B_input, A_input)
 
 
-        delta_trans_1 = impact_class.delta_trans_1()
-        delta_trans_2 = impact_class.delta_trans_2()
-        transfo_1 = impact_class.transfo_1
-        transfo_2_inv = impact_class.transfo_2_inv
+    impact_class_EI = Impact(B_input,Trans_EI,horizon, pas_temps, money_cost, env_cost, necessity, pas_indiv, ressources)
+    #Solutions = impact_class.solutions_t1_t2()
+    impact_EI = round(impact_class_EI.impact_tot())
+    money_EI = impact_class_EI.money_cost_opp()
+    envt_EI = impact_class_EI.env_cost_opp()
+    cat = ['Impact contrefactuel net', "Coût d'opportunité financier", "Coût d'opportunité environnemental"]*2
+    list_impact = [impact_value - money - envt, money, envt, impact_EI - money_EI - envt_EI, money_EI, envt_EI]
+    intervention_EI = ['Sans EI']*3 + ['Avec EI']*3
 
-
-        
-        tuples_1 = list(delta_trans_1.values())
-        tuples_2 = list(delta_trans_2.values())
-
-        categories = list(delta_trans_1.keys())[:-1]
-        trans = (np.array([list(Trans.values())])+100)[0]
-        values_1_w = np.array([t[0] for t in tuples_1[:-1]])
-        values_2_w = np.array([t[0] for t in tuples_2[:-1]])
-        values_1 = trans + values_1_w
-        values_2 = trans + values_2_w
-
-        Trans_EI = dict(zip(categories, values_1-100))
-        B_input = copy.deepcopy(A_input)
-        k_per = 1 + tuples_1[-1]
-        for i in range(1,nb_gp+1):
-            B_input[i][-1][3] *= 1/(k_per)
-            B_input[i][-1][4] *= 1/(k_per)
-            B_input[i][-1][2] *= k_per 
-        for i in range(1,nb_gp+1):
-            for k in range(len(B_input[1])-1):
-                B_input[i][k][4] *= 1/(k_per)
-                B_input[i][k][5] *= 1/(k_per)
-                B_input[i][k][3] *= k_per
-
-        # col1, col2 = st.columns(2)
-        # with col1:
-        #     st.write(B_input)
-        # with col2:
-        #     st.write(A_input)
-
-        impact_class_EI = Impact(B_input,Trans_EI,horizon, pas_temps, money_cost, env_cost, necessity, pas_indiv, ressources)
-        #Solutions = impact_class.solutions_t1_t2()
-        impact_EI = round(impact_class_EI.impact_tot())
-        money_EI = impact_class_EI.money_cost_opp()
-        envt_EI = impact_class_EI.env_cost_opp()
-        
-
-        cat = ['Impact contrefactuel net', "Coût d'opportunité financier", "Coût d'opportunité environnemental"]*2
-        list_impact = [impact_value - money - envt, money, envt, impact_EI - money_EI - envt_EI, money_EI, envt_EI]
-        intervention_EI = ['Sans EI']*3 + ['Avec EI']*3
-        df_imp = pd.DataFrame({'Type Impacts/Coûts': cat, 'Valeur': list_impact, 'EI': intervention_EI})
-        
+    colors = {cat[0]: "blue", cat[1]: "green", cat[2]: "red", cat[3]: "magenta"}
+    df_imp = pd.DataFrame({'Type Impacts/Coûts': cat, 'Valeur': list_impact, 'EI': intervention_EI})
 
 #-------------------------------------------------------------------------------------------------------------------------------------
 #Vérification paramétrage:
 #-------------------------------------------------------------------------------------------------------------------------------------
 
 
-    st.header(f'{compteur_titres}- Vérification du paramétrage de $k_t$ et $p_s$')
-    compteur_titres +=1
+    st.header('6- Vérification du paramétrage de $k_t$ et $p_s$')
     with st.expander("Cliquez ici pour vérifier le parametrage des fonction $k_t$ et $p_s$"):
         Kt_list = np.linspace(-w_t,0,100)
         Ks_list = np.linspace(-w_s,0,100)
@@ -395,11 +370,6 @@ def main():
         ps_true = impact_class.ps()
         Kt_true = impact_class.Kt()
         Ks_true = impact_class.Ks()
-        if EI:
-            kt_true_EI = impact_class_EI.kt_2()
-            ps_true_EI = impact_class_EI.ps()
-            Kt_true_EI = impact_class_EI.Kt()
-            Ks_true_EI = impact_class_EI.Ks()
 
 
         col1, col2 = st.columns(2)
@@ -408,28 +378,22 @@ def main():
         with col1:
             # Créer un graphe interactif Plotly
             fig_4 = px.line(x=Kt_list, y=KT, title='Fonction de pénalisation contrefactuelle')
-            fig_4.update_traces(line=dict(color='orange', dash='solid'))
+            fig_4.update_traces(line=dict(color='green', dash='solid'))
             fig_4.update_xaxes(title_text='K_kt')
             fig_4.update_yaxes(title_text='k_t')
             fig_4.update_layout(
                 xaxis=dict(showgrid=True, gridcolor=black_with_opacity),
                 yaxis=dict(showgrid=True, gridcolor=black_with_opacity), width =650
             )
-            highlight_trace_4 = go.Scatter(x=[Kt_true], y=[kt_true], mode='markers', marker=dict(color='blue', size=10), name ='Actuel')
+            highlight_trace_4 = go.Scatter(x=[Kt_true], y=[kt_true], mode='markers', marker=dict(color='black', size=10), name ='Point actuel')
             fig_4.add_trace(highlight_trace_4)
-
-            if EI:
-                highlight_trace_5 = go.Scatter(x=[Kt_true_EI], y=[kt_true_EI], mode='markers', marker=dict(color='green', size=10), name ='EI')
-                fig_4.add_trace(highlight_trace_5)
             st.plotly_chart(fig_4)
-            if EI:
-                st.write(f'Efficacité conctrefactuelle:    {round(kt_true_EI/kt_true,2)}')
 
 
         with col2:
             # Créer un graphe interactif Plotly
             fig_5 = px.line(x=Ks_list, y=PS, title='Fonction de probabilité de succès')
-            fig_5.update_traces(line=dict(color='orange', dash='solid'))
+            fig_5.update_traces(line=dict(color='blue', dash='solid'))
             fig_5.update_xaxes(title_text='K_ps')
             fig_5.update_yaxes(title_text='p_s')
             fig_5.update_layout(
@@ -437,213 +401,206 @@ def main():
                 yaxis=dict(showgrid=True, gridcolor=black_with_opacity), width=650
             )
             #highlight_trace_5 = px.scatter(x=[Ks_true], y=[ps_true] )
-            highlight_trace_6 = go.Scatter(x=[Ks_true], y=[ps_true], mode='markers', marker=dict(color='blue', size=10), name='Actuel')
-            fig_5.add_trace(highlight_trace_6)
-
-            if EI:
-                highlight_trace_7 = go.Scatter(x=[Ks_true_EI], y=[ps_true_EI], mode='markers', marker=dict(color='green', size=10), name='EI')
-                fig_5.add_trace(highlight_trace_7)
+            highlight_trace_5 = go.Scatter(x=[Ks_true], y=[ps_true], mode='markers', marker=dict(color='black', size=10), name='Point actuel')
+            fig_5.add_trace(highlight_trace_5)
             st.plotly_chart(fig_5)
-            if EI:
-                st.write(f'Efficacité de succès:    {round(ps_true_EI/ps_true,2)}')
 
 
 
-    if EI:
-        st.header(str(compteur_titres)+'- Vérification du paramétrage du layer EI')
-        compteur_titres +=1
-        with st.expander("Cliquez ici pour vérifier le parametrage pour le layer EI"):
+    st.header('7- Vérification du paramétrage du layer EI')
 
-            # st.write(str(ressources))
-            # st.write(str(Trans))
-            
+    with st.expander("Cliquez ici pour vérifier le parametrage pour le layer EI"):
 
-            L_tabs = st.tabs(variables_EI[:-1])
-            for i in range(len(L_tabs)):
-                with L_tabs[i]:
-                    X_1 = np.linspace(0,10)
-                    Y_1 = np.array([(100-(Trans[variables_EI[i]]+100))*transfo_1(x) for x in X_1]) + Trans[variables_EI[i]]+100
-                    X_2 = np.linspace(0,7)
-                    Y_2 = [transfo_2_inv(x) for x in X_2]
-                    arg_1 = tuples_1[i][1]
-                    arg_av = tuples_2[i][1]
-                    arg_ap = tuples_2[i][2]
-            
-                    fig_var_1 = go.Figure()
-                    fig_var_1.add_trace(go.Scatter(x=X_1, y=Y_1, mode='lines', name='Modèle 1'))
-                    fig_var_1.add_hrect(y0=Trans[variables_EI[i]]+100, 
-                    y1= (100-(Trans[variables_EI[i]]+100))*transfo_1(arg_1) +Trans[variables_EI[i]]+100, fillcolor= 'green', opacity=0.4, line_width=0)
+        # st.write(str(ressources))
+        # st.write(str(Trans))
+        
 
-                    fig_var_1.update_xaxes(title_text=f'Variable intermédiaire')
-                    fig_var_1.update_yaxes(title_text="Variable transversale")
-                    fig_var_1.update_layout(width = 650, title = 'Modèle 1')
-                    fig_var_1.add_annotation(
-                            go.layout.Annotation(
-                                x=6,  # x-coordinate of the arrowhead
-                                y=(100-(Trans[variables_EI[i]]+100))*transfo_1(arg_1) +Trans[variables_EI[i]]+100,  # y-coordinate of the arrowhead
-                                xref="x",  # x-coordinate reference ("x" axis)
-                                yref="y",  # y-coordinate reference ("y" axis)
-                                ax=6,  # x-coordinate of the arrow tail
-                                ay=Trans[variables_EI[i]]+96,  # y-coordinate of the arrow tail
-                                axref="x",  # x-coordinate reference for the arrow tail ("x" axis)
-                                ayref="y",  # y-coordinate reference for the arrow tail ("y" axis)
-                                showarrow=True,
-                                arrowhead=2,  # Arrowhead style (2 is a filled arrowhead)
-                                #arrowsize=1.5,  # Arrowhead size
-                                arrowwidth=2,  # Arrow width
-                                text = 'Delta_X',
-                                font = dict(size=16)
-                            ),
-                        )
-                    fig_var_1.add_annotation(x=0, y=Trans[variables_EI[i]]+100,
-                    text="X avant",
-                    showarrow=True,
-                    arrowhead=1)
-                    fig_var_1.add_annotation(x=arg_1, y=(100-(Trans[variables_EI[i]]+100))*transfo_1(arg_1) +Trans[variables_EI[i]]+100,
-                    text="X_EI",
-                    showarrow=True,
-                    arrowhead=1)
-                    
+        L_tabs = st.tabs(variables_EI[:-1])
+        for i in range(len(L_tabs)):
+            with L_tabs[i]:
+                X_1 = np.linspace(0,10)
+                Y_1 = np.array([(100-(Trans[variables_EI[i]]+100))*transfo_1(x) for x in X_1]) + Trans[variables_EI[i]]+100
+                X_2 = np.linspace(0,7)
+                Y_2 = [transfo_2_inv(x) for x in X_2]
+                arg_1 = tuples_1[i][1]
+                arg_av = tuples_2[i][1]
+                arg_ap = tuples_2[i][2]
+        
+                fig_var_1 = go.Figure()
+                fig_var_1.add_trace(go.Scatter(x=X_1, y=Y_1, mode='lines', name='Modèle 1'))
+                fig_var_1.add_hrect(y0=Trans[variables_EI[i]]+100, 
+                y1= (100-(Trans[variables_EI[i]]+100))*transfo_1(arg_1) +Trans[variables_EI[i]]+100, fillcolor= 'green', opacity=0.4, line_width=0)
+
+                fig_var_1.update_xaxes(title_text=f'Variable intermédiaire')
+                fig_var_1.update_yaxes(title_text="Variable transversale")
+                fig_var_1.update_layout(width = 650, title = 'Modèle 1')
+                fig_var_1.add_annotation(
+                        go.layout.Annotation(
+                            x=6,  # x-coordinate of the arrowhead
+                            y=(100-(Trans[variables_EI[i]]+100))*transfo_1(arg_1) +Trans[variables_EI[i]]+100,  # y-coordinate of the arrowhead
+                            xref="x",  # x-coordinate reference ("x" axis)
+                            yref="y",  # y-coordinate reference ("y" axis)
+                            ax=6,  # x-coordinate of the arrow tail
+                            ay=Trans[variables_EI[i]]+96,  # y-coordinate of the arrow tail
+                            axref="x",  # x-coordinate reference for the arrow tail ("x" axis)
+                            ayref="y",  # y-coordinate reference for the arrow tail ("y" axis)
+                            showarrow=True,
+                            arrowhead=2,  # Arrowhead style (2 is a filled arrowhead)
+                            #arrowsize=1.5,  # Arrowhead size
+                            arrowwidth=2,  # Arrow width
+                            text = 'Delta_X',
+                            font = dict(size=16)
+                        ),
+                    )
+                fig_var_1.add_annotation(x=0, y=Trans[variables_EI[i]]+100,
+                text="X avant",
+                showarrow=True,
+                arrowhead=1)
+                fig_var_1.add_annotation(x=arg_1, y=(100-(Trans[variables_EI[i]]+100))*transfo_1(arg_1) +Trans[variables_EI[i]]+100,
+                text="X_EI",
+                showarrow=True,
+                arrowhead=1)
+                
 
 
-                    fig_var_1.update_layout(
-                        yaxis=dict(range=[0,100]) 
+                fig_var_1.update_layout(
+                    yaxis=dict(range=[0,100]) 
+                )
+
+                fig_var_2 = go.Figure()
+                fig_var_2.add_trace(go.Scatter(x=X_2, y=Y_2, mode='lines', name='modele_2'))
+                fig_var_2.add_hrect(y0=transfo_2_inv(arg_av), 
+                y1= transfo_2_inv(arg_ap), fillcolor= 'green', opacity=0.4, line_width=0)
+                fig_var_2.update_xaxes(title_text=f'Variable intermédiaire')
+                fig_var_2.update_yaxes(title_text="Variable transversale")
+                fig_var_2.update_layout(width = 650, title = 'Modèle 2')
+                fig_var_2.add_annotation(x=arg_av, y=transfo_2_inv(arg_av),
+                text="X_EI",
+                showarrow=True,
+                arrowhead=1)
+                fig_var_2.add_annotation(x=arg_ap, y=transfo_2_inv(arg_ap),
+                text="X avant",
+                showarrow=True,
+                arrowhead=1)
+                fig_var_2.add_annotation(
+                        go.layout.Annotation(
+                            x=5,  # x-coordinate of the arrowhead
+                            y=transfo_2_inv(arg_ap),  # y-coordinate of the arrowhead
+                            xref="x",  # x-coordinate reference ("x" axis)
+                            yref="y",  # y-coordinate reference ("y" axis)
+                            ax=5,  # x-coordinate of the arrow tail
+                            ay=transfo_2_inv(arg_av)-4,  # y-coordinate of the arrow tail
+                            axref="x",  # x-coordinate reference for the arrow tail ("x" axis)
+                            ayref="y",  # y-coordinate reference for the arrow tail ("y" axis)
+                            showarrow=True,
+                            arrowhead=2,  # Arrowhead style (2 is a filled arrowhead)
+                            #arrowsize=1.5,  # Arrowhead size
+                            arrowwidth=2,  # Arrow width
+                            text = 'Delta_X',
+                            font = dict(size=16)
+                        ),
                     )
 
-                    fig_var_2 = go.Figure()
-                    fig_var_2.add_trace(go.Scatter(x=X_2, y=Y_2, mode='lines', name='modele_2'))
-                    fig_var_2.add_hrect(y0=transfo_2_inv(arg_av), 
-                    y1= transfo_2_inv(arg_ap), fillcolor= 'green', opacity=0.4, line_width=0)
-                    fig_var_2.update_xaxes(title_text=f'Variable intermédiaire')
-                    fig_var_2.update_yaxes(title_text="Variable transversale")
-                    fig_var_2.update_layout(width = 650, title = 'Modèle 2')
-                    fig_var_2.add_annotation(x=arg_av, y=transfo_2_inv(arg_av),
-                    text="X_EI",
-                    showarrow=True,
-                    arrowhead=1)
-                    fig_var_2.add_annotation(x=arg_ap, y=transfo_2_inv(arg_ap),
-                    text="X avant",
-                    showarrow=True,
-                    arrowhead=1)
-                    fig_var_2.add_annotation(
-                            go.layout.Annotation(
-                                x=5,  # x-coordinate of the arrowhead
-                                y=transfo_2_inv(arg_ap),  # y-coordinate of the arrowhead
-                                xref="x",  # x-coordinate reference ("x" axis)
-                                yref="y",  # y-coordinate reference ("y" axis)
-                                ax=5,  # x-coordinate of the arrow tail
-                                ay=transfo_2_inv(arg_av)-4,  # y-coordinate of the arrow tail
-                                axref="x",  # x-coordinate reference for the arrow tail ("x" axis)
-                                ayref="y",  # y-coordinate reference for the arrow tail ("y" axis)
-                                showarrow=True,
-                                arrowhead=2,  # Arrowhead style (2 is a filled arrowhead)
-                                #arrowsize=1.5,  # Arrowhead size
-                                arrowwidth=2,  # Arrow width
-                                text = 'Delta_X',
-                                font = dict(size=16)
-                            ),
-                        )
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.plotly_chart(fig_var_1)
+                with col2:
+                    st.plotly_chart(fig_var_2)
 
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.plotly_chart(fig_var_1)
-                    with col2:
-                        st.plotly_chart(fig_var_2)
-
-            st.markdown("---")
+        st.markdown("---")
 
 
 
 
 
-            # Y_2 = np.linspace(0,10,100)
-            # X_2 = [f_2(y) for y in Y_2]
-            # X_1 = np.linspace(0,arg_max,100)
+        # Y_2 = np.linspace(0,10,100)
+        # X_2 = [f_2(y) for y in Y_2]
+        # X_1 = np.linspace(0,arg_max,100)
 
-            
+        
 
-            # Créez un objet trace pour le premier diagramme araignée avec remplissage
-            trace_X_1 = go.Scatterpolar(
-                r=trans,
-                theta=categories,
-                fill='toself',
-                fillcolor='rgba(0, 0, 128, 0.7)',  # Couleur pour remplir la zone incluse (vert ici)
-                name='X'
-            )
+        # Créez un objet trace pour le premier diagramme araignée avec remplissage
+        trace_X_1 = go.Scatterpolar(
+            r=trans,
+            theta=categories,
+            fill='toself',
+            fillcolor='rgba(0, 0, 128, 0.7)',  # Couleur pour remplir la zone incluse (vert ici)
+            name='X'
+        )
 
-            # Créez un objet trace pour le deuxième diagramme araignée avec remplissage
-            trace_deltaX_1 = go.Scatterpolar(
-                r=values_1,
-                theta=categories,
-                fill='tonext',
-                fillcolor='rgba(0, 128, 0, 0.7)',  # Couleur pour remplir la zone incluse (rouge ici)
-                name='delta_X'
-            )
+        # Créez un objet trace pour le deuxième diagramme araignée avec remplissage
+        trace_deltaX_1 = go.Scatterpolar(
+            r=values_1,
+            theta=categories,
+            fill='tonext',
+            fillcolor='rgba(0, 128, 0, 0.7)',  # Couleur pour remplir la zone incluse (rouge ici)
+            name='delta_X'
+        )
 
-            # Créez une liste de traces pour les deux diagrammes
-            traces_1 = [
-            trace_X_1, 
-            trace_deltaX_1
-            ]
+        # Créez une liste de traces pour les deux diagrammes
+        traces_1 = [
+        trace_X_1, 
+        trace_deltaX_1
+        ]
 
-            # Créez la mise en page du diagramme araignée
-            layout = go.Layout(
-                polar=dict(
-                    radialaxis=dict(
-                        visible=True,
-                        range=[0, 100]
-                    )
-                ), title = 'Modèle 1', width = 650,
-                showlegend=True
-            )
+        # Créez la mise en page du diagramme araignée
+        layout = go.Layout(
+            polar=dict(
+                radialaxis=dict(
+                    visible=True,
+                    range=[0, 100]
+                )
+            ), title = 'Modèle 1', width = 650,
+            showlegend=True
+        )
 
-            # Créez la figure
-            fig_X_1 = go.Figure(data=traces_1, layout=layout)
+        # Créez la figure
+        fig_X_1 = go.Figure(data=traces_1, layout=layout)
 
 
-            # Créez un objet trace pour le premier diagramme araignée avec remplissage
-            trace_X_2 = go.Scatterpolar(
-                r=trans,
-                theta=categories,
-                fill='toself',
-                fillcolor='rgba(0, 0, 128, 0.7)',  # Couleur pour remplir la zone incluse (vert ici)
-                name='X'
-            )
+        # Créez un objet trace pour le premier diagramme araignée avec remplissage
+        trace_X_2 = go.Scatterpolar(
+            r=trans,
+            theta=categories,
+            fill='toself',
+            fillcolor='rgba(0, 0, 128, 0.7)',  # Couleur pour remplir la zone incluse (vert ici)
+            name='X'
+        )
 
-            # Créez un objet trace pour le deuxième diagramme araignée avec remplissage
-            trace_deltaX_2 = go.Scatterpolar(
-                r=values_2,
-                theta=categories,
-                fill='tonext',
-                fillcolor='rgba(0, 128, 0, 0.7)',  # Couleur pour remplir la zone incluse (rouge ici)
-                name='delta_X'
-            )
+        # Créez un objet trace pour le deuxième diagramme araignée avec remplissage
+        trace_deltaX_2 = go.Scatterpolar(
+            r=values_2,
+            theta=categories,
+            fill='tonext',
+            fillcolor='rgba(0, 128, 0, 0.7)',  # Couleur pour remplir la zone incluse (rouge ici)
+            name='delta_X'
+        )
 
-            # Créez une liste de traces pour les deux diagrammes
-            traces_2 = [
-            trace_X_2, 
-            trace_deltaX_2
-            ]
+        # Créez une liste de traces pour les deux diagrammes
+        traces_2 = [
+        trace_X_2, 
+        trace_deltaX_2
+        ]
 
-            # Créez la mise en page du diagramme araignée
-            layout_2 = go.Layout(
-                polar=dict(
-                    radialaxis=dict(
-                        visible=True,
-                        range=[0, 100]
-                    )
-                ), title = 'Modèle 2', width = 650,
-                showlegend=True
-            )
+        # Créez la mise en page du diagramme araignée
+        layout_2 = go.Layout(
+            polar=dict(
+                radialaxis=dict(
+                    visible=True,
+                    range=[0, 100]
+                )
+            ), title = 'Modèle 2', width = 650,
+            showlegend=True
+        )
 
-            # Créez la figure
-            fig_X_2 = go.Figure(data=traces_2, layout=layout_2)
+        # Créez la figure
+        fig_X_2 = go.Figure(data=traces_2, layout=layout_2)
 
-            col1, col2 =st.columns(2)
-            with col1:
-                st.plotly_chart(fig_X_1)
-            with col2:
-                st.plotly_chart(fig_X_2)
+        col1, col2 =st.columns(2)
+        with col1:
+            st.plotly_chart(fig_X_1)
+        with col2:
+            st.plotly_chart(fig_X_2)
 
         
 
@@ -666,17 +623,17 @@ def main():
 
 
     if valider_saisies:
-        st.header(str(compteur_titres) +'- Résultats')
+        st.header('8- Résultats')
         imp_net = format_number(impact_value-money-envt)
+        imp_EI_net = format_number((impact_EI-money_EI-envt_EI)-(impact_value - money - envt))
+        st.write(df_imp)
         st.markdown(
         f"<div style='text-align: center; font-size: 24px; font-weight: bold; border: 2px solid black; padding: 10px;'> Impact contrefactuel net = {imp_net}</div>",
         unsafe_allow_html=True)
 
-        if EI:
-            imp_EI_net = format_number((impact_EI-money_EI-envt_EI)-(impact_value - money - envt))
-            st.markdown(
-            f"<div style='text-align: center; font-size: 24px; font-weight: bold; border: 2px solid black; padding: 10px;'> Impact contrefactuel net de EI = {imp_EI_net}</div>",
-            unsafe_allow_html=True)
+        st.markdown(
+        f"<div style='text-align: center; font-size: 24px; font-weight: bold; border: 2px solid black; padding: 10px;'> Impact contrefactuel net de EI = {imp_EI_net}</div>",
+        unsafe_allow_html=True)
 
 
 
@@ -689,28 +646,14 @@ def main():
 
         imp_gp_vect = np.vectorize(impact_class.fonction_impact_gp, otypes=[np.float32])
         I_n = imp_gp_vect(n)
-        
 
         imp_temps_vect = np.vectorize(impact_class.fonction_impact_temps, otypes=[np.float32])
         I_t = imp_temps_vect(t)
-
-        
 
         L_temps_gp = []
         for k in range(nb_gp):
             imp_tps_gp = np.vectorize(impact_class.fonction_impact_temps_gp, otypes=[np.float32])
             L_temps_gp.append(imp_tps_gp(k+1, t))
-
-
-        if EI:
-            imp_gp_EI_vect = np.vectorize(impact_class_EI.fonction_impact_gp, otypes=[np.float32])
-            I_n_EI = imp_gp_EI_vect(n)
-            imp_temps_EI_vect = np.vectorize(impact_class_EI.fonction_impact_temps, otypes=[np.float32])
-            I_t_EI = imp_temps_EI_vect(t)
-            L_temps_EI_gp = []
-            for k in range(nb_gp):
-                imp_tps_EI_gp = np.vectorize(impact_class_EI.fonction_impact_temps_gp, otypes=[np.float32])
-                L_temps_EI_gp.append(imp_tps_EI_gp(k+1, t))
 
         # L_temps_gp = []
         # for k in range(nb_gp):
@@ -732,8 +675,6 @@ def main():
 
 
         hist = impact_class.fonction_impact_somme_gp()
-        if EI:
-            hist_EI = impact_class_EI.fonction_impact_somme_gp()
 
         grid_layout = go.Layout(
             xaxis=dict(gridcolor='gray', gridwidth=1),  # Grille grise plus foncée sur l'axe des x
@@ -742,18 +683,11 @@ def main():
 
         black_with_opacity = 'rgba(0, 0, 0, 0.4)'
 
-        if EI:
-            fig_7 = px.bar(df_imp, x= 'EI', y='Valeur', color='Type Impacts/Coûts', text='Valeur', title='Impacts et coûts',
-            color_discrete_sequence = ['green', 'blue', 'red'])
-            #fig_7.update_traces(marker=dict(color=df_imp["Type Impacts/Coûts"].map(colors)))
-            fig_7.update_coloraxes(showscale=False)
-            fig_7.update_traces(texttemplate='%{text:,}')
-
-        else:
-            fig_7 = px.bar(df_imp, x= 'Type Impacts/Coûts', y='Valeur', text='Valeur', title='Impacts et coûts')
-            fig_7.update_traces(marker=dict(color=df_imp["Type Impacts/Coûts"].map(colors)))
-            fig_7.update_coloraxes(showscale=False)
-            fig_7.update_traces(texttemplate='%{text:,}')
+        fig_7 = px.bar(df_imp, x= 'EI', y='Valeur', color='Type Impacts/Coûts', text='Valeur', title='Impacts et coûts',
+        color_discrete_sequence = ['green', 'blue', 'red'])
+        #fig_7.update_traces(marker=dict(color=df_imp["Type Impacts/Coûts"].map(colors)))
+        fig_7.update_coloraxes(showscale=False)
+        fig_7.update_traces(texttemplate='%{text:,}')
 
 
 
@@ -761,10 +695,8 @@ def main():
         fig_1 = go.Figure()
 
         # Ajoutez les données tracées
-        
-        if EI:
-            fig_1.add_trace(go.Scatter(x=n, y=I_n_EI, mode='lines', name='Avec EI', line=dict(color='green', dash='solid')))
-        fig_1.add_trace(go.Scatter(x=n, y=I_n, mode='lines', name='Sans EI', line=dict(color='red', dash='solid'), showlegend = EI))
+        fig_1.add_trace(go.Scatter(x=n, y=I_n, mode='lines', name='Données', line=dict(color='red', dash='solid')))
+
         # Ajoutez les lignes verticales avec légendes
         val_n = 0
         N_pop = impact_class.N_pop()
@@ -781,35 +713,13 @@ def main():
 
         rge = max(abs(min(hist['Impact'])), abs(max(hist['Impact'])))
         color_range = [-rge, rge]
-
+        #color_scale = [(1.0, 'red'), (0.0, 'green')]
         fig_6 = px.bar(hist, x='Groupes', y='Impact', title='Distribution des groupes', 
                         color='Impact', color_continuous_scale='RdYlGn', range_color = color_range)
         fig_6.update_coloraxes(showscale=False)
+
+
         fig_6.update_layout(width = 650)
-
-
-        if EI:
-            fig_6 = go.Figure()
-
-            fig_6.add_trace(go.Bar(
-                x=hist['Groupes'],
-                y=hist['Impact'],
-                name='Distribution des groupes',
-                marker_color='blue'  # Utilisez marker_color pour spécifier la couleur basée sur 'Impact'
-            ))
-
-            fig_6.add_trace(go.Bar(
-                x=hist_EI['Groupes'],
-                y=hist_EI['Impact'],
-                name='Distribution des groupes avec EI',
-                marker_color='green',  # Utilisez marker_color pour spécifier la couleur basée sur 'Impact'
-            ))
-
-            fig_6.update_layout(
-                title='Distribution des groupes',
-                xaxis=dict(title='Groupes'),
-                yaxis=dict(title='Impact'),)
-    
 
 #        fig_1.update_layout(
 #            xaxis=dict(showgrid=True, gridcolor=black_with_opacity),
@@ -817,38 +727,14 @@ def main():
 #        )
         fig_2 = go.Figure()
         palette = px.colors.qualitative.G10
-        palette_opp = [f'rgba({int(color[1:3], 16)},{int(color[3:5], 16)},{int(color[5:7], 16)},0.25)' for color in palette]
-
         color = palette[0]
-        color_opp = palette_opp[0]
-        fig_2.add_trace(go.Scatter(x=t, y=I_t, mode='lines', name='WB collectif', line=dict(color=color, dash='dash')))
-        if EI:
-            fig_2.add_trace(go.Scatter(x=t, y=I_t_EI, mode='lines', name='WB collectif avec EI', line=dict(color=color, dash='solid')))
-            fig_2.add_trace(go.Scatter(x=np.concatenate([t, t[::-1]]),  # x dans les deux sens pour le remplissage
-                            y=np.concatenate([I_t, I_t_EI[::-1]]),  # y1 et y2 dans les deux sens
-                            fill='tozerox',  # Remplissage jusqu'à l'axe x
-                            fillcolor=color_opp,  # Utilisation de la palette personnalisée
-                            line=dict(color=color_opp),
-                            showlegend=False)
-                            )
+        fig_2.add_trace(go.Scatter(x=t, y=I_t, mode='lines', name='WB collectif', line=dict(color=color, dash='solid')))
         for k in range(1,len(L_temps_gp)+1):
             color = palette[k % len(palette)]
-            color_opp = palette_opp[k % len(palette)]
-            fig_2.add_trace(go.Scatter(x=t, y=L_temps_gp[k-1], mode='lines', name=f'WB groupe {k+1}', line=dict(color=color, dash='dash')))
-            if EI:
-                fig_2.add_trace(go.Scatter(x=t, y=L_temps_EI_gp[k-1], mode='lines', name=f'WB groupe {k+1}', line=dict(color=color, dash='solid')))
-                fig_2.add_trace(go.Scatter(x=np.concatenate([t, t[::-1]]),  # x dans les deux sens pour le remplissage
-                            y=np.concatenate([L_temps_gp[k-1], L_temps_EI_gp[k-1][::-1]]),  # y1 et y2 dans les deux sens
-                            fill='tozerox',  # Remplissage jusqu'à l'axe x
-                            fillcolor=color_opp,  # Utilisation de la palette personnalisée
-                            line=dict(color=color_opp),
-                            showlegend=False)
-                            )
+            fig_2.add_trace(go.Scatter(x=t, y=L_temps_gp[k-1], mode='lines', name=f'WB groupe {k+1}', line=dict(color=color, dash='solid')))
         fig_2.update_xaxes(title_text=f'Temps en {unit_temps}')
         fig_2.update_yaxes(title_text='Well-being collectif')
         fig_2.update_traces(texttemplate='%{text:,}')
-
-
 
 
 
@@ -870,18 +756,16 @@ def main():
             st.plotly_chart(fig_6)
         with col2:
             st.plotly_chart(fig_1)
-  
 
         col1, col2, col3 = st.columns([2,6,1])
 
-
         with col2:
-
             st.plotly_chart(fig_2)
 
             st.plotly_chart(fig_3)
 
         st.markdown("---")
+        col1, col2 = st.columns([4, 1])
 
 
 

@@ -1,0 +1,49 @@
+,Métier,Variables transversales,Valeur
+0,Développeur / CTO,No_Concurrence,0.25
+1,Respo marketing,No_Concurrence,0.25
+2,Data engineer,No_Concurrence,0.25
+3,Product manager,No_Concurrence,0.0
+4,Product designer,No_Concurrence,0.0
+5,Consultant stratégie,No_Concurrence,2.0
+6,Développeur / CTO,No_Pouvoir des agents terminaux,0.0
+7,Respo marketing,No_Pouvoir des agents terminaux,1.0
+8,Data engineer,No_Pouvoir des agents terminaux,0.0
+9,Product manager,No_Pouvoir des agents terminaux,1.0
+10,Product designer,No_Pouvoir des agents terminaux,0.0
+11,Consultant stratégie,No_Pouvoir des agents terminaux,2.0
+12,Développeur / CTO,Ressources financières,0.0
+13,Respo marketing,Ressources financières,1.0
+14,Data engineer,Ressources financières,0.0
+15,Product manager,Ressources financières,0.0
+16,Product designer,Ressources financières,0.0
+17,Consultant stratégie,Ressources financières,0.5
+18,Développeur / CTO,Expertise domaine,0.5
+19,Respo marketing,Expertise domaine,0.0
+20,Data engineer,Expertise domaine,2.0
+21,Product manager,Expertise domaine,1.0
+22,Product designer,Expertise domaine,1.5
+23,Consultant stratégie,Expertise domaine,0.25
+24,Développeur / CTO,Expertise opérationnelle,0.25
+25,Respo marketing,Expertise opérationnelle,0.5
+26,Data engineer,Expertise opérationnelle,1.0
+27,Product manager,Expertise opérationnelle,2.0
+28,Product designer,Expertise opérationnelle,1.0
+29,Consultant stratégie,Expertise opérationnelle,1.5
+30,Développeur / CTO,Expertise marketing,2.0
+31,Respo marketing,Expertise marketing,3.0
+32,Data engineer,Expertise marketing,1.0
+33,Product manager,Expertise marketing,1.0
+34,Product designer,Expertise marketing,1.0
+35,Consultant stratégie,Expertise marketing,1.0
+36,Développeur / CTO,Innovation,0.5
+37,Respo marketing,Innovation,0.5
+38,Data engineer,Innovation,1.0
+39,Product manager,Innovation,1.0
+40,Product designer,Innovation,2.0
+41,Consultant stratégie,Innovation,0.25
+42,Développeur / CTO,Pérennité,1.5
+43,Respo marketing,Pérennité,2.0
+44,Data engineer,Pérennité,1.0
+45,Product manager,Pérennité,1.0
+46,Product designer,Pérennité,1.0
+47,Consultant stratégie,Pérennité,1.0
