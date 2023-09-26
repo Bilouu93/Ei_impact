@@ -19,7 +19,7 @@ import copy
 L_var = list(dic_wb.keys())
 
 # Noms variables transversales
-L_trans = variables_EI[:len(variables_EI)-1]
+L_trans = variables_EI[:len(variables_EI)-1] #Doublon de var_trans
 
 
 
@@ -129,7 +129,7 @@ def main():
     necessity = st.number_input('Nécessité dans le contexte environnemental', value=1.00, step=0.01) #Fixé à 1
 
 #-------------------------------------------------------------------------------------------------------------------------------------
-#Gropues de population
+#Groupes de population
 #-------------------------------------------------------------------------------------------------------------------------------------
 
     st.header("4- Caractérisation des groupes de population")
@@ -313,6 +313,7 @@ def main():
         edited_EI = st.data_editor(df_EI)
 
         # Calcul de l'augmentation relative des ressources pondérées par le degré d'expertise pour chaque métier
+        # Rajouter un bouton pour valider la saisie avant de calculer
         df_EI_copy = df_EI.copy()
         df_EI_copy['num'] = (df_EI_copy['Ressources EI']*df_EI_copy['Expertise'])
         df_EI_copy['den'] = (df_EI_copy['Ressources EI']+df_EI_copy['Ressources staff'])*df_EI_copy['Expertise']
@@ -347,7 +348,7 @@ def main():
         
         
 
-        # Changement du dictionnaire d'input en se basant sur l'augmentation de la pérennité due aux ressources d'EI
+        # Changement du dictionnaire d'input en se basant sur l'augmentation de la pérennité due aux ressources d'EI. B_input contient la contribution d'EI
         B_input = copy.deepcopy(A_input)
         k_per = 1 + tuples_1[-1]
         for i in range(1,nb_gp+1):
