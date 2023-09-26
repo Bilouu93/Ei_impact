@@ -8,18 +8,20 @@ from scipy.optimize import bisect
 delta = 0.015 #taux d'actualisation
 
 alpha_ps = 0.004 #paramètre pour régler la référence sur p_s
-beta_xlim = 1.5
-alpha_per = 0.05
-alpha_par = 0.75
+beta_xlim = 1.5 #Paramètre pour la prise en conmpte des ressources avec le modèle 1
+alpha_per = 0.05 #Paramètre pour la variable transversale pérennité traitée à part
+alpha_par = 0.75 #Paramètre pour la prise en conmpte des ressources avec le modèle 2
 
-#Worst case
+#Worst case pour les variables régressives de kt et ps
 df = df_ts.copy()
 df['input'] = np.array([100 for i in range(7)])
 wt = sum(df['input']*df['Coef reg kt non normalisé'])
 ws = sum(df['input']*df['Coef reg ps non normalisé'])
 
+# Priors pour les coûts d'opportunité
 climatic = 0.1
 revenus = 0.4
+
 
 class Impact:
     def __init__(self, input_A, Trans, horizon, pas, money_cost, env_cost, necessity, pas_indiv, ressources):
@@ -33,6 +35,7 @@ class Impact:
         self.pas_indiv = pas_indiv
         self.ressources = ressources
 
+        #On met ces termes dans l'initialisation pour ne pas avoir avoir à les recalculer
         self.nb_gp_value = self.nb_gp() 
         self.N_pop_tot = self.N_pop()
         self.n_glob_value = self.n_glob() 
@@ -44,7 +47,7 @@ class Impact:
         self.max_temps = self.max_temps_param()
         self.solutions = self.solutions_t1_t2()
 
-
+    # Fonction auxiliaire pour la recherce d'éléemnts dans une liste
     def indice_max_inferieur(self, n, L):
         gauche, droite = 0, len(L) - 1
         indice = -1
@@ -58,6 +61,8 @@ class Impact:
                 droite = milieu - 1
         return indice
 
+
+    # Modèle du cycle de vie pour les variables dynamiques (spécifiques et taille de population)
     def cycle_de_vie(self, t, K_1, K_2, tau_glob, a, b):
         tau_1 = a * tau_glob
         tau_2 = b * tau_glob
@@ -70,10 +75,12 @@ class Impact:
             return ((K_1 - K_2) * np.exp(-tau_glob / (tau_1 + 0.000001)) + K_2) * np.exp(-(t - tau_glob) / (tau_2 + 0.000001))
 
 
-
+    # Nombre de groupes
     def nb_gp(self):
         return len(list(self.input_A.keys()))
 
+
+    # Liste contenant les valeurs des tailles de population en les sommant par groupe
     def N_pop(self):
         n = 1
         N = 0
@@ -86,32 +93,41 @@ class Impact:
             n += 1
         return N_list
 
+    # Nombre de personnes total
     def n_glob(self):
         N_list = self.N_pop_tot
         return N_list[-1]
 
+    # Coût d'opportunité financier
     def money_cost_opp(self):
         return round(revenus*self.n_glob_value*self.pas_indiv*np.log((500 + self.money_cost/(100*self.n_glob_value))/500))
     
+    # Cout d'opportunité environnemental
     def env_cost_opp(self):
         return round(climatic*self.n_glob_value*self.pas_indiv*self.necessity*40*(self.env_cost/(self.n_glob_value*self.pas_indiv*5))*(1/(1+delta))**(30))
 
+
+    # Calcul de la variable régressive pour kt
     def Kt(self):
         df = df_ts.copy()
         df_2 = pd.DataFrame.from_dict(self.Trans, 'index', columns=['Valeur']).reset_index()
         df['input'] = df_2['Valeur']
         return sum(df['input']*df['Coef reg kt non normalisé'])
 
+
+    # Calcul de kt avec faible concavité
     def kt_1(self):
         arg_1 = (np.exp(1)-1)/wt
         arg_2 = np.exp(1)
         kt = np.log(arg_1*self.Kt_value+arg_2)
         return kt
 
+    # Calcul de kt avec plus grande concavité
     def kt_2(self):
         arg = -3*(self.Kt_value+wt)/(wt)
         return 1 - np.exp(arg)
 
+    # Calcul de la variable régressive pour ps
     def Ks(self):
         df = df_ts.copy()
         df_2 = pd.DataFrame.from_dict(self.Trans, 'index', columns=['Valeur']).reset_index()
@@ -119,11 +135,13 @@ class Impact:
         final = 0.004 * sum(df['input']*df['Coef reg ps non normalisé'])
         return final
 
+    # Calcul de ps avec un modèle logistique discret
     def ps(self, beta=0.05):
         arg = np.exp(-self.Ks_value)
         p_s = 1/(1+beta*arg)
         return p_s
 
+    # Donne le groupe d'une personne
     def groupe(self, n):
         N_list = self.N_pop_tot
         if n == 1:
@@ -132,6 +150,7 @@ class Impact:
             gp = 1 + self.indice_max_inferieur(n, N_list)
         return gp
 
+    # Le temps qu'il faut pour que le dernier individu ne soit plus concerné par une augmentation du WB
     def max_temps_param(self):
         nb_groupes = self.nb_gp_value
         L_temps = np.zeros(nb_groupes)
@@ -141,9 +160,24 @@ class Impact:
             L_temps[k] = tau_glob*(1+5*b)
         return max(L_temps)
 
+
+    # Modèle 1 pour les ressources
     def transfo_1(self,x):
         return (1-np.exp(-x/beta_xlim))
+    
+    def delta_trans_1_var(self, var):
+        R = self.ressources
+        arg = np.sum(np.array([dic_EI[m][var]*R[m] for m in R.keys()]))
+        if var != 'Pérennité':
+            return ((100-(self.Trans[var]+100))*self.transfo_1(arg), arg)
+        else:
+            return arg*alpha_per
 
+    def delta_trans_1(self):
+        d_delta_var_1 = {var: self.delta_trans_1_var(var) for var in variables_EI}
+        return d_delta_var_1
+
+    # Modèle 2 pour les ressources
     def transfo_2(self, X):
         return np.log((100+X)/(100-X))
 
@@ -152,14 +186,6 @@ class Impact:
             return  self.transfo_2(x) - y
         t_solution = bisect(f, 0, 100-1e-5, xtol=0.01, maxiter=50)
         return t_solution
-
-    def delta_trans_1_var(self, var):
-        R = self.ressources
-        arg = np.sum(np.array([dic_EI[m][var]*R[m] for m in R.keys()]))
-        if var != 'Pérennité':
-            return ((100-(self.Trans[var]+100))*self.transfo_1(arg), arg)
-        else:
-            return arg*alpha_per
         
     def delta_trans_2_var(self, var):
         R = self.ressources
@@ -172,15 +198,12 @@ class Impact:
         else:
             return arg_1*alpha_per
 
-    def delta_trans_1(self):
-        d_delta_var_1 = {var: self.delta_trans_1_var(var) for var in variables_EI}
-        return d_delta_var_1
-
     def delta_trans_2(self):
         d_delta_var_2 = {var: self.delta_trans_2_var(var) for var in variables_EI}
         return d_delta_var_2
 
 
+    # Instants auquel un individu n souscrit au service et le quitte
     def solution(self, n):
         gp = self.groupe(n)
         L_var = self.input_A[gp]
@@ -225,6 +248,8 @@ class Impact:
 
         return [t_solution_1, t_solution_2], [bool_1,bool_2]
 
+
+    # Instants auquel un individu n souscrit au service et le quitte pour chaque individu
     def solutions_t1_t2(self):
         N_tot = self.n_glob_value
         D_solution = {}
@@ -233,6 +258,8 @@ class Impact:
             D_solution[k] = sol
         return D_solution
 
+
+    # Fonction micro du WB
     def f_WB(self, n, t):
         Solution = self.solutions
         gp = self.groupe(n)
@@ -263,6 +290,8 @@ class Impact:
             WB = 0
         return WB*self.pas_indiv
 
+
+    # WB de l'individu n sommé sur le temps
     def fonction_impact_gp(self, n):
         temps_int = self.max_temps
         N_fen = int(temps_int)
@@ -271,18 +300,20 @@ class Impact:
         S = np.sum(L_tot)
         return S * self.pas
 
+    # WB collectif de l'ensemble de la population à un instant t
     def fonction_impact_temps(self, t):
         N_tot = self.n_glob_value
         N_indiv = np.arange(1, N_tot+1)
         return np.sum(np.array([self.f_WB(n,t) for n in N_indiv]))
 
+    # WB collectif d'un groupe de la population à un instant t
     def fonction_impact_temps_gp(self, gp, t):
         N_popul = self.N_pop_tot
         nb_groupes = self.nb_gp_value
         N_indiv_gp = np.arange(int(N_popul[gp-1]), int(N_popul[gp])+1)
         return np.sum(np.array([self.f_WB(n,t) for n in N_indiv_gp]))
 
-
+    #Tableau donnant les WB sommé sur le temps pour chaque groupe
     def fonction_impact_somme_gp(self):
         nb_groupes = self.nb_gp_value
         hist = np.zeros(nb_groupes)
@@ -294,6 +325,8 @@ class Impact:
         data = pd.DataFrame({'Groupes': cat, 'Impact': hist})
         return data
 
+
+    # Impact brut total
     def impact_tot(self):
         N_tot = self.n_glob_value
         N_indiv = np.arange(1, N_tot+1)
